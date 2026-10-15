@@ -160,3 +160,120 @@
 
   <!-- GALERÍA -->
   <main class="gallery-container" id="galeria-container">
+    <div class="grid" id="grid-albumes">
+      <!-- Los álbumes se cargan aquí desde Supabase -->
+    </div>
+  </main>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+  
+  <script>
+    // ================= CONFIGURACIÓN SUPABASE =================
+    const SUPABASE_URL = 'https://mpgpvxrqnulskmepmur.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ================= FANCYBOX (VISOR) =================
+    Fancybox.bind('[data-fancybox]', {
+      Carousel: { transition: "fade" },
+      Images: { zoom: false },
+      Toolbar: { display: { left: ["infobar"], middle: [], right: ["close"] } }
+    });
+
+    // ================= VALIDACIÓN AL CARGAR =================
+    document.addEventListener('DOMContentLoaded', () => {
+      const usuarioActivo = localStorage.getItem('usuario_activo');
+      if (usuarioActivo) {
+        desbloquearWeb(usuarioActivo);
+      }
+    });
+
+    // ================= LÓGICA DE INGRESO (CON DIAGNÓSTICO) =================
+    async function verificarAcceso() {
+      try {
+        const email = document.getElementById('user-email').value.trim();
+        const anioStr = document.getElementById('birth-year').value.trim();
+        
+        if (!email || !anioStr) {
+          alert("Por favor, llena ambos campos.");
+          return;
+        }
+
+        const anio = parseInt(anioStr);
+        alert("1. Buscando en Supabase a: " + email + " con el año " + anio);
+
+        const { data, error } = await supabase
+          .from('formulario_familia')
+          .select('*')
+          .eq('correo', email)
+          .eq('anio_nacimiento', anio)
+          .single();
+
+        if (error) {
+          alert("2. ERROR de Supabase: " + error.message + " (Código: " + error.code + ")");
+          document.getElementById('error-msg').style.display = 'block';
+          return;
+        }
+
+        if (data) {
+          alert("3. ¡Éxito! Datos encontrados para: " + data.nombre_completo);
+          localStorage.setItem('usuario_activo', data.nombre_completo);
+          localStorage.setItem('usuario_correo', data.correo);
+          desbloquearWeb(data.nombre_completo);
+        } else {
+          alert("2. No se encontró ningún dato.");
+        }
+
+      } catch (err) {
+        alert("ERROR FATAL en la página: " + err.message);
+      }
+    }
+
+    function desbloquearWeb(nombreUsuario) {
+      document.getElementById('auth-modal').style.display = 'none';
+      document.getElementById('galeria-container').style.display = 'block';
+      document.getElementById('user-display').innerText = `Visualizando como: ${nombreUsuario}`;
+      cargarAlbumes();
+    }
+
+    // ================= CARGAR ÁLBUMES EN LA GRILLA =================
+    async function cargarAlbumes() {
+      const { data: albums, error } = await supabase
+        .from('albums')
+        .select('*')
+        .order('id', { ascending: true });
+        
+      if (error) { console.error('Error:', error); return; }
+
+      const contenedor = document.getElementById('grid-albumes');
+      contenedor.innerHTML = '';
+
+      albums.forEach((album, index) => {
+        // Formatea el número (ej. "01.", "02.")
+        const numeroFormateado = String(index + 1).padStart(2, '0') + ".";
+        
+        const card = document.createElement('a');
+        card.className = 'album-card';
+        card.href = album.cover_url;
+        card.setAttribute('data-fancybox', `gallery-${album.id}`);
+        card.setAttribute('data-caption', album.title);
+
+        card.innerHTML = `
+          <div class="album-image-wrapper">
+            <img src="${album.cover_url}" alt="${album.title}" loading="lazy">
+          </div>
+          <div class="album-meta">
+            <div class="album-number">${numeroFormateado}</div>
+            <div class="album-details">
+              <h3>${album.title}</h3>
+              <p>${album.photo_count || 0} fotografías</p>
+            </div>
+          </div>
+        `;
+        contenedor.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>
