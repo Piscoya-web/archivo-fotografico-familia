@@ -142,17 +142,19 @@
     <div class="grid" id="grid-albumes"></div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
   
   <script>
-    let clienteSupabase = null;
+    const SUPABASE_URL = 'https://mpgpvxrqnulskmepmur.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk';
+    
+    // Inicialización directa de Supabase
+    const clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: false }
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
-      const SUPABASE_URL = 'https://mpgpvxrqnulskmepmur.supabase.co';
-      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk';
-      
-      clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
       Fancybox.bind('[data-fancybox]', {
         Carousel: { transition: "fade" },
         Images: { zoom: false },
@@ -180,40 +182,47 @@
         return;
       }
 
-      // Consulta flexible sin .single() para evitar bloqueos
-      const { data, error } = await clienteSupabase
-        .from('formulario_familia')
-        .select('*')
-        .eq('correo', email);
+      try {
+        // Petición directa a Supabase
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/formulario_familia?correo=eq.${encodeURIComponent(email)}`, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          }
+        });
 
-      if (error) {
+        if (!response.ok) {
+          throw new Error('Error en la respuesta del servidor');
+        }
+
+        const data = await response.json();
+
+        if (!data || data.length === 0) {
+          statusMsg.style.color = '#d93025';
+          statusMsg.innerText = "El correo no está registrado.";
+          return;
+        }
+
+        const usuarioEncontrado = data.find(item => String(item.anio_nacimiento).trim() === String(anio).trim());
+
+        if (usuarioEncontrado) {
+          statusMsg.style.color = '#0f9d58';
+          statusMsg.innerText = "¡Bienvenido/a, " + usuarioEncontrado.nombre_completo + "!";
+          
+          localStorage.setItem('usuario_activo', usuarioEncontrado.nombre_completo);
+          localStorage.setItem('usuario_correo', usuarioEncontrado.correo);
+          
+          setTimeout(() => {
+            desbloquearWeb(usuarioEncontrado.nombre_completo);
+          }, 800);
+        } else {
+          statusMsg.style.color = '#d93025';
+          statusMsg.innerText = "El año de nacimiento no coincide.";
+        }
+
+      } catch (err) {
         statusMsg.style.color = '#d93025';
-        statusMsg.innerText = "Error técnico: " + error.message;
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        statusMsg.style.color = '#d93025';
-        statusMsg.innerText = "El correo no está registrado.";
-        return;
-      }
-
-      // Buscamos el usuario y validamos el año convirtiéndolo a texto para evitar choques
-      const usuarioEncontrado = data.find(item => String(item.anio_nacimiento).trim() === String(anio).trim());
-
-      if (usuarioEncontrado) {
-        statusMsg.style.color = '#0f9d58';
-        statusMsg.innerText = "¡Bienvenido/a, " + usuarioEncontrado.nombre_completo + "!";
-        
-        localStorage.setItem('usuario_activo', usuarioEncontrado.nombre_completo);
-        localStorage.setItem('usuario_correo', usuarioEncontrado.correo);
-        
-        setTimeout(() => {
-          desbloquearWeb(usuarioEncontrado.nombre_completo);
-        }, 800);
-      } else {
-        statusMsg.style.color = '#d93025';
-        statusMsg.innerText = "El año de nacimiento no coincide.";
+        statusMsg.innerText = "Error de conexión: " + err.message;
       }
     }
 
