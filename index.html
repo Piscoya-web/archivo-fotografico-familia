@@ -52,7 +52,6 @@
     }
     .modal-content button:hover { background: #333; }
     
-    /* Área de mensajes de estado */
     .status-msg { 
       font-size: 0.85rem; display: none; margin-top: 15px; font-weight: 500;
     }
@@ -128,7 +127,6 @@
       <input type="password" id="birth-year" placeholder="Año de nacimiento (Ej: 1965)" required>
       <button onclick="verificarAcceso()">Ingresar al archivo</button>
       
-      <!-- Aquí aparecerá el diagnóstico visual -->
       <p id="status-msg" class="status-msg"></p>
     </div>
   </div>
@@ -150,77 +148,72 @@
     let clienteSupabase = null;
 
     document.addEventListener('DOMContentLoaded', () => {
-      try {
-        const SUPABASE_URL = 'https://mpgpvxrqnulskmepmur.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk';
-        
-        clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      const SUPABASE_URL = 'https://mpgpvxrqnulskmepmur.supabase.co';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk';
+      
+      clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        Fancybox.bind('[data-fancybox]', {
-          Carousel: { transition: "fade" },
-          Images: { zoom: false },
-          Toolbar: { display: { left: ["infobar"], middle: [], right: ["close"] } }
-        });
+      Fancybox.bind('[data-fancybox]', {
+        Carousel: { transition: "fade" },
+        Images: { zoom: false },
+        Toolbar: { display: { left: ["infobar"], middle: [], right: ["close"] } }
+      });
 
-        const usuarioActivo = localStorage.getItem('usuario_activo');
-        if (usuarioActivo) {
-          desbloquearWeb(usuarioActivo);
-        }
-      } catch (err) {
-        console.error(err);
+      const usuarioActivo = localStorage.getItem('usuario_activo');
+      if (usuarioActivo) {
+        desbloquearWeb(usuarioActivo);
       }
     });
 
     async function verificarAcceso() {
       const statusMsg = document.getElementById('status-msg');
-      
-      // 1. Mostrar estado de conexión en AZUL
       statusMsg.style.display = 'block';
       statusMsg.style.color = '#0066cc';
       statusMsg.innerText = "Conectando con la base de datos...";
 
-      try {
-        // Convertimos todo el correo a minúsculas para evitar choques
-        const email = document.getElementById('user-email').value.trim().toLowerCase();
-        const anioStr = document.getElementById('birth-year').value.trim();
-        
-        if (!email || !anioStr) {
-          statusMsg.style.color = '#d93025';
-          statusMsg.innerText = "Por favor, escribe tu correo y año.";
-          return;
-        }
-
-        const { data, error } = await clienteSupabase
-          .from('formulario_familia')
-          .select('nombre_completo, correo')
-          .eq('correo', email)
-          .eq('anio_nacimiento', parseInt(anioStr))
-          .single();
-
-        if (error) {
-          statusMsg.style.color = '#d93025'; // Rojo
-          if (error.code === 'PGRST116') {
-             statusMsg.innerText = "Correo o año incorrecto en la base de datos.";
-          } else {
-             statusMsg.innerText = "Error: " + error.message;
-          }
-          return;
-        }
-
-        if (data) {
-          // 2. Mostrar estado de éxito en VERDE
-          statusMsg.style.color = '#0f9d58'; 
-          statusMsg.innerText = "¡Acceso correcto! Cargando fotos...";
-          
-          localStorage.setItem('usuario_activo', data.nombre_completo);
-          
-          setTimeout(() => {
-            desbloquearWeb(data.nombre_completo);
-          }, 800);
-        }
-      } catch (err) {
+      const email = document.getElementById('user-email').value.trim().toLowerCase();
+      const anio = document.getElementById('birth-year').value.trim();
+      
+      if (!email || !anio) {
         statusMsg.style.color = '#d93025';
-        statusMsg.innerText = "Error del sistema: " + err.message;
+        statusMsg.innerText = "Completa ambos campos.";
+        return;
+      }
+
+      // Consulta flexible sin .single() para evitar bloqueos
+      const { data, error } = await clienteSupabase
+        .from('formulario_familia')
+        .select('*')
+        .eq('correo', email);
+
+      if (error) {
+        statusMsg.style.color = '#d93025';
+        statusMsg.innerText = "Error técnico: " + error.message;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        statusMsg.style.color = '#d93025';
+        statusMsg.innerText = "El correo no está registrado.";
+        return;
+      }
+
+      // Buscamos el usuario y validamos el año convirtiéndolo a texto para evitar choques
+      const usuarioEncontrado = data.find(item => String(item.anio_nacimiento).trim() === String(anio).trim());
+
+      if (usuarioEncontrado) {
+        statusMsg.style.color = '#0f9d58';
+        statusMsg.innerText = "¡Bienvenido/a, " + usuarioEncontrado.nombre_completo + "!";
+        
+        localStorage.setItem('usuario_activo', usuarioEncontrado.nombre_completo);
+        localStorage.setItem('usuario_correo', usuarioEncontrado.correo);
+        
+        setTimeout(() => {
+          desbloquearWeb(usuarioEncontrado.nombre_completo);
+        }, 800);
+      } else {
+        statusMsg.style.color = '#d93025';
+        statusMsg.innerText = "El año de nacimiento no coincide.";
       }
     }
 
