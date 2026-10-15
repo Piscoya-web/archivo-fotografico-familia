@@ -38,13 +38,13 @@
     }
     .modal-content p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; }
     .modal-content input {
-      width: 100%; padding: 15px; margin-bottom: 15px;
+      width: 100%; padding: 12px; margin-bottom: 12px;
       border: 1px solid #ddd; background: #ffffff; color: #111;
       border-radius: 4px; font-family: 'Inter', sans-serif;
-      box-sizing: border-box; text-align: center; font-size: 1rem;
+      box-sizing: border-box; text-align: center; font-size: 0.95rem;
     }
     .modal-content button {
-      width: 100%; padding: 15px;
+      width: 100%; padding: 15px; margin-top: 5px;
       background: var(--text-main); color: #fff;
       border: none; cursor: pointer; font-size: 0.9rem;
       letter-spacing: 1px; text-transform: uppercase;
@@ -123,9 +123,13 @@
       <h1>Piscoya.</h1>
       <p>Archivo Histórico Familiar</p>
       
+      <!-- Se agregaron los campos extra -->
+      <input type="text" id="user-name" placeholder="Nombre completo" required>
+      <input type="text" id="user-rel" placeholder="Parentesco (Ej: Primo, Tío)" required>
       <input type="email" id="user-email" placeholder="Correo electrónico" required>
-      <input type="password" id="birth-year" placeholder="Año de nacimiento (Ej: 1965)" required>
-      <button onclick="verificarAcceso()">Ingresar al archivo</button>
+      <input type="number" id="birth-year" placeholder="Año de nacimiento (Ej: 1965)" required>
+      
+      <button onclick="registrarEIngresar()">Ingresar al archivo</button>
       
       <p id="status-msg" class="status-msg"></p>
     </div>
@@ -146,11 +150,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
   
   <script>
-    // 👇 URL CORREGIDA AQUÍ 👇
     const SUPABASE_URL = 'https://mqpgvxrqnulskmepmuri.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk';
     
-    // Inicialización directa de Supabase
     const clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: { persistSession: false }
     });
@@ -168,62 +170,82 @@
       }
     });
 
-    async function verificarAcceso() {
+    // Nueva función que Registra o Inicia Sesión
+    async function registrarEIngresar() {
       const statusMsg = document.getElementById('status-msg');
       statusMsg.style.display = 'block';
       statusMsg.style.color = '#0066cc';
-      statusMsg.innerText = "Conectando con la base de datos...";
+      statusMsg.innerText = "Procesando...";
 
+      const nombre = document.getElementById('user-name').value.trim();
+      const parentesco = document.getElementById('user-rel').value.trim();
       const email = document.getElementById('user-email').value.trim().toLowerCase();
       const anio = document.getElementById('birth-year').value.trim();
       
-      if (!email || !anio) {
+      if (!nombre || !parentesco || !email || !anio) {
         statusMsg.style.color = '#d93025';
-        statusMsg.innerText = "Completa ambos campos.";
+        statusMsg.innerText = "Por favor, completa todos los campos.";
         return;
       }
 
       try {
-        // Petición directa a Supabase
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/formulario_familia?correo=eq.${encodeURIComponent(email)}`, {
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`
+        // 1. Verificamos si el correo ya existe
+        const { data: usuarios, error: searchError } = await clienteSupabase
+          .from('formulario_familia')
+          .select('*')
+          .eq('correo', email);
+
+        if (searchError) throw searchError;
+
+        let usuarioValido = null;
+
+        if (usuarios && usuarios.length > 0) {
+          // Ya existe: validamos el año
+          const usuarioExistente = usuarios[0];
+          if (String(usuarioExistente.anio_nacimiento) === String(anio)) {
+            usuarioValido = usuarioExistente;
+            statusMsg.style.color = '#0f9d58';
+            statusMsg.innerText = "¡Qué bueno verte de nuevo, " + usuarioValido.nombre_completo + "!";
+          } else {
+            statusMsg.style.color = '#d93025';
+            statusMsg.innerText = "Este correo ya está registrado con otro año de nacimiento.";
+            return;
           }
-        });
+        } else {
+          // Es nuevo: lo registramos (INSERT)
+          const { data: nuevoUsuario, error: insertError } = await clienteSupabase
+            .from('formulario_familia')
+            .insert([
+              { 
+                nombre_completo: nombre, 
+                correo: email, 
+                parentesco: parentesco, 
+                anio_nacimiento: parseInt(anio) 
+              }
+            ])
+            .select();
 
-        if (!response.ok) {
-          throw new Error('Error en la respuesta del servidor');
-        }
-
-        const data = await response.json();
-
-        if (!data || data.length === 0) {
-          statusMsg.style.color = '#d93025';
-          statusMsg.innerText = "El correo no está registrado.";
-          return;
-        }
-
-        const usuarioEncontrado = data.find(item => String(item.anio_nacimiento).trim() === String(anio).trim());
-
-        if (usuarioEncontrado) {
-          statusMsg.style.color = '#0f9d58';
-          statusMsg.innerText = "¡Bienvenido/a, " + usuarioEncontrado.nombre_completo + "!";
+          if (insertError) throw insertError;
           
-          localStorage.setItem('usuario_activo', usuarioEncontrado.nombre_completo);
-          localStorage.setItem('usuario_correo', usuarioEncontrado.correo);
+          usuarioValido = nuevoUsuario[0];
+          statusMsg.style.color = '#0f9d58';
+          statusMsg.innerText = "¡Registro exitoso! Bienvenido/a, " + usuarioValido.nombre_completo;
+        }
+
+        // Dar acceso a las fotos
+        if (usuarioValido) {
+          localStorage.setItem('usuario_activo', usuarioValido.nombre_completo);
+          localStorage.setItem('usuario_correo', usuarioValido.correo);
           
           setTimeout(() => {
-            desbloquearWeb(usuarioEncontrado.nombre_completo);
-          }, 800);
-        } else {
-          statusMsg.style.color = '#d93025';
-          statusMsg.innerText = "El año de nacimiento no coincide.";
+            desbloquearWeb(usuarioValido.nombre_completo);
+          }, 1200);
         }
 
       } catch (err) {
         statusMsg.style.color = '#d93025';
-        statusMsg.innerText = "Error de conexión: " + err.message;
+        statusMsg.innerText = "Error: Verifica los permisos en Supabase. " + err.message;
+        console.error("Detalle del error:", err);
       }
     }
 
