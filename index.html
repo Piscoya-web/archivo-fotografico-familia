@@ -36,7 +36,7 @@
       font-family: 'Playfair Display', serif;
       font-size: 2.5rem; margin-bottom: 5px;
     }
-    .modal-content p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 30px; }
+    .modal-content p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; }
     .modal-content input {
       width: 100%; padding: 15px; margin-bottom: 15px;
       border: 1px solid #ddd; background: #ffffff; color: #111;
@@ -51,7 +51,11 @@
       border-radius: 4px; transition: background 0.3s;
     }
     .modal-content button:hover { background: #333; }
-    .error-msg { color: #d93025; font-size: 0.8rem; display: none; margin-top: 10px; }
+    
+    /* Área de mensajes de estado */
+    .status-msg { 
+      font-size: 0.85rem; display: none; margin-top: 15px; font-weight: 500;
+    }
 
     header {
       display: flex; justify-content: space-between; align-items: center;
@@ -86,11 +90,9 @@
       text-decoration: none; color: inherit;
       display: block; cursor: pointer;
     }
-    
     .album-card:nth-child(3n+1) { grid-column: span 8; } 
     .album-card:nth-child(3n+2) { grid-column: span 4; } 
     .album-card:nth-child(3n+3) { grid-column: span 6; } 
-
     .album-image-wrapper {
       width: 100%; aspect-ratio: 4/3;
       overflow: hidden; background: #eaeaea;
@@ -100,21 +102,13 @@
       transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
     .album-card:hover img { transform: scale(1.05); }
-    
-    .album-meta {
-      margin-top: 15px;
-      display: flex; gap: 15px;
-    }
+    .album-meta { margin-top: 15px; display: flex; gap: 15px; }
     .album-number {
       font-size: 2.5rem; font-family: 'Inter', sans-serif;
       font-weight: 300; line-height: 0.8; letter-spacing: -1px;
     }
-    .album-details h3 {
-      margin: 0; font-size: 0.9rem; font-weight: 600;
-    }
-    .album-details p {
-      margin: 2px 0 0; font-size: 0.75rem; color: var(--text-muted);
-    }
+    .album-details h3 { margin: 0; font-size: 0.9rem; font-weight: 600; }
+    .album-details p { margin: 2px 0 0; font-size: 0.75rem; color: var(--text-muted); }
 
     @media (max-width: 768px) {
       .grid { display: flex; flex-direction: column; gap: 50px; }
@@ -134,7 +128,8 @@
       <input type="password" id="birth-year" placeholder="Año de nacimiento (Ej: 1965)" required>
       <button onclick="verificarAcceso()">Ingresar al archivo</button>
       
-      <p id="error-msg" class="error-msg">Credenciales incorrectas.</p>
+      <!-- Aquí aparecerá el diagnóstico visual -->
+      <p id="status-msg" class="status-msg"></p>
     </div>
   </div>
 
@@ -152,47 +147,80 @@
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
   
   <script>
-    const SUPABASE_URL = 'https://mpgpvxrqnulskmepmur.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk';
-    const clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    Fancybox.bind('[data-fancybox]', {
-      Carousel: { transition: "fade" },
-      Images: { zoom: false },
-      Toolbar: { display: { left: ["infobar"], middle: [], right: ["close"] } }
-    });
+    let clienteSupabase = null;
 
     document.addEventListener('DOMContentLoaded', () => {
-      const usuarioActivo = localStorage.getItem('usuario_activo');
-      if (usuarioActivo) {
-        desbloquearWeb(usuarioActivo);
+      try {
+        const SUPABASE_URL = 'https://mpgpvxrqnulskmepmur.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk';
+        
+        clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        Fancybox.bind('[data-fancybox]', {
+          Carousel: { transition: "fade" },
+          Images: { zoom: false },
+          Toolbar: { display: { left: ["infobar"], middle: [], right: ["close"] } }
+        });
+
+        const usuarioActivo = localStorage.getItem('usuario_activo');
+        if (usuarioActivo) {
+          desbloquearWeb(usuarioActivo);
+        }
+      } catch (err) {
+        console.error(err);
       }
     });
 
     async function verificarAcceso() {
-      const email = document.getElementById('user-email').value.trim();
-      const anioStr = document.getElementById('birth-year').value.trim();
+      const statusMsg = document.getElementById('status-msg');
       
-      if (!email || !anioStr) {
-        document.getElementById('error-msg').innerText = "Llena todos los campos.";
-        document.getElementById('error-msg').style.display = 'block';
-        return;
-      }
+      // 1. Mostrar estado de conexión en AZUL
+      statusMsg.style.display = 'block';
+      statusMsg.style.color = '#0066cc';
+      statusMsg.innerText = "Conectando con la base de datos...";
 
-      const { data, error } = await clienteSupabase
-        .from('formulario_familia')
-        .select('nombre_completo, correo')
-        .eq('correo', email)
-        .eq('anio_nacimiento', parseInt(anioStr))
-        .single();
+      try {
+        // Convertimos todo el correo a minúsculas para evitar choques
+        const email = document.getElementById('user-email').value.trim().toLowerCase();
+        const anioStr = document.getElementById('birth-year').value.trim();
+        
+        if (!email || !anioStr) {
+          statusMsg.style.color = '#d93025';
+          statusMsg.innerText = "Por favor, escribe tu correo y año.";
+          return;
+        }
 
-      if (error || !data) {
-        document.getElementById('error-msg').innerText = "Credenciales incorrectas.";
-        document.getElementById('error-msg').style.display = 'block';
-      } else {
-        localStorage.setItem('usuario_activo', data.nombre_completo);
-        localStorage.setItem('usuario_correo', data.correo);
-        desbloquearWeb(data.nombre_completo);
+        const { data, error } = await clienteSupabase
+          .from('formulario_familia')
+          .select('nombre_completo, correo')
+          .eq('correo', email)
+          .eq('anio_nacimiento', parseInt(anioStr))
+          .single();
+
+        if (error) {
+          statusMsg.style.color = '#d93025'; // Rojo
+          if (error.code === 'PGRST116') {
+             statusMsg.innerText = "Correo o año incorrecto en la base de datos.";
+          } else {
+             statusMsg.innerText = "Error: " + error.message;
+          }
+          return;
+        }
+
+        if (data) {
+          // 2. Mostrar estado de éxito en VERDE
+          statusMsg.style.color = '#0f9d58'; 
+          statusMsg.innerText = "¡Acceso correcto! Cargando fotos...";
+          
+          localStorage.setItem('usuario_activo', data.nombre_completo);
+          
+          setTimeout(() => {
+            desbloquearWeb(data.nombre_completo);
+          }, 800);
+        }
+      } catch (err) {
+        statusMsg.style.color = '#d93025';
+        statusMsg.innerText = "Error del sistema: " + err.message;
       }
     }
 
@@ -209,7 +237,7 @@
         .select('*')
         .order('id', { ascending: true });
         
-      if (error) { console.error('Error:', error); return; }
+      if (error) return;
 
       const contenedor = document.getElementById('grid-albumes');
       contenedor.innerHTML = '';
