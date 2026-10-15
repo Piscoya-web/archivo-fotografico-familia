@@ -123,7 +123,6 @@
       <h1>Piscoya.</h1>
       <p>Archivo Histórico Familiar</p>
       
-      <!-- Se agregaron los campos extra -->
       <input type="text" id="user-name" placeholder="Nombre completo" required>
       <input type="text" id="user-rel" placeholder="Parentesco (Ej: Primo, Tío)" required>
       <input type="email" id="user-email" placeholder="Correo electrónico" required>
@@ -170,7 +169,6 @@
       }
     });
 
-    // Nueva función que Registra o Inicia Sesión
     async function registrarEIngresar() {
       const statusMsg = document.getElementById('status-msg');
       statusMsg.style.display = 'block';
@@ -189,7 +187,6 @@
       }
 
       try {
-        // 1. Verificamos si el correo ya existe
         const { data: usuarios, error: searchError } = await clienteSupabase
           .from('formulario_familia')
           .select('*')
@@ -200,7 +197,6 @@
         let usuarioValido = null;
 
         if (usuarios && usuarios.length > 0) {
-          // Ya existe: validamos el año
           const usuarioExistente = usuarios[0];
           if (String(usuarioExistente.anio_nacimiento) === String(anio)) {
             usuarioValido = usuarioExistente;
@@ -212,7 +208,6 @@
             return;
           }
         } else {
-          // Es nuevo: lo registramos (INSERT)
           const { data: nuevoUsuario, error: insertError } = await clienteSupabase
             .from('formulario_familia')
             .insert([
@@ -232,7 +227,6 @@
           statusMsg.innerText = "¡Registro exitoso! Bienvenido/a, " + usuarioValido.nombre_completo;
         }
 
-        // Dar acceso a las fotos
         if (usuarioValido) {
           localStorage.setItem('usuario_activo', usuarioValido.nombre_completo);
           localStorage.setItem('usuario_correo', usuarioValido.correo);
@@ -257,22 +251,34 @@
     }
 
     async function cargarAlbumes() {
-      const { data: albums, error } = await clienteSupabase
+      // 1. Traemos los álbumes
+      const { data: albums, error: albumsError } = await clienteSupabase
         .from('albums')
         .select('*')
         .order('id', { ascending: true });
         
-      if (error) return;
+      // 2. Traemos TODAS las fotos de la tabla 'photos'
+      const { data: photos, error: photosError } = await clienteSupabase
+        .from('photos')
+        .select('*');
+
+      if (albumsError) return;
 
       const contenedor = document.getElementById('grid-albumes');
       contenedor.innerHTML = '';
 
       albums.forEach((album, index) => {
         const numeroFormateado = String(index + 1).padStart(2, '0') + ".";
+
+        // Contenedor envolvente para el álbum y sus fotos ocultas
+        const divAlbum = document.createElement('div');
+        divAlbum.style.display = 'contents'; 
+
+        // Creamos la portada (visible)
         const card = document.createElement('a');
         card.className = 'album-card';
-        card.href = album.cover_url;
-        card.setAttribute('data-fancybox', `gallery-${album.id}`);
+        card.href = album.cover_url; 
+        card.setAttribute('data-fancybox', `gallery-${album.id}`); 
         card.setAttribute('data-caption', album.title);
 
         card.innerHTML = `
@@ -287,7 +293,27 @@
             </div>
           </div>
         `;
-        contenedor.appendChild(card);
+        divAlbum.appendChild(card);
+
+        // Buscamos las fotos que pertenecen a este álbum y las añadimos ocultas
+        if (photos) {
+          const fotosDelAlbum = photos.filter(p => p.album_id === album.id);
+          fotosDelAlbum.forEach(foto => {
+            const hiddenLink = document.createElement('a');
+            
+            // CORRECCIÓN: usamos 'foto.url' según tu base de datos
+            hiddenLink.href = foto.url; 
+            hiddenLink.setAttribute('data-fancybox', `gallery-${album.id}`); 
+            
+            // CORRECCIÓN: usamos 'foto.caption' para que muestre la descripción de cada foto
+            hiddenLink.setAttribute('data-caption', foto.caption || ''); 
+            
+            hiddenLink.style.display = 'none'; 
+            divAlbum.appendChild(hiddenLink);
+          });
+        }
+
+        contenedor.appendChild(divAlbum);
       });
     }
   </script>
