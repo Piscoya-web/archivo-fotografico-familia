@@ -257,12 +257,34 @@
         .select('*')
         .order('id', { ascending: true });
         
-      // 2. Traemos TODAS las fotos de la tabla 'photos'
-      const { data: photos, error: photosError } = await clienteSupabase
-        .from('photos')
-        .select('*');
-
       if (albumsError) return;
+
+      // 2. Traemos TODAS las fotos evadiendo el límite de 1000 de Supabase
+      let photos = [];
+      let from = 0;
+      let to = 999;
+      let hayMasFotos = true;
+
+      while (hayMasFotos) {
+        const { data: batch, error: photosError } = await clienteSupabase
+          .from('photos')
+          .select('*')
+          .range(from, to);
+
+        if (photosError) {
+          console.error("Error al cargar las fotos:", photosError);
+          break;
+        }
+
+        photos = photos.concat(batch);
+
+        if (batch.length < 1000) {
+          hayMasFotos = false; // Ya no hay más fotos que traer
+        } else {
+          from += 1000;
+          to += 1000; // Pedimos el siguiente lote de 1000 fotos
+        }
+      }
 
       const contenedor = document.getElementById('grid-albumes');
       contenedor.innerHTML = '';
@@ -297,18 +319,17 @@
 
         // Buscamos las fotos que pertenecen a este álbum y las añadimos ocultas
         if (photos) {
-          const fotosDelAlbum = photos.filter(p => p.album_id === album.id);
+          // Aseguramos de que el tipo de dato coincida (convirtiendo ambos a String)
+          const fotosDelAlbum = photos.filter(p => String(p.album_id) === String(album.id));
+          
           fotosDelAlbum.forEach(foto => {
             const hiddenLink = document.createElement('a');
             
-            // CORRECCIÓN: usamos 'foto.url' según tu base de datos
             hiddenLink.href = foto.url; 
             hiddenLink.setAttribute('data-fancybox', `gallery-${album.id}`); 
-            
-            // CORRECCIÓN: usamos 'foto.caption' para que muestre la descripción de cada foto
             hiddenLink.setAttribute('data-caption', foto.caption || ''); 
-            
             hiddenLink.style.display = 'none'; 
+            
             divAlbum.appendChild(hiddenLink);
           });
         }
