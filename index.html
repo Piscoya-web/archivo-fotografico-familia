@@ -5,19 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Archivo Fotográfico Familia Piscoya</title>
 
-  <!-- Fuentes: Playfair Display (Serif Elegante) y Inter (Sans-serif limpia) -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-  
-  <!-- Fancybox CSS (Slide) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
-  
-  <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* ================= PALETA Y TIPOGRAFÍA (Estilo Referencias) ================= */
     :root {
-      --bg-color: #f4f4f2; /* Color hueso elegante */
+      --bg-color: #f4f4f2; 
       --text-main: #111111;
       --text-muted: #666666;
     }
@@ -29,10 +23,9 @@
       overflow-x: hidden;
     }
 
-    /* ================= BARRERA DE ENTRADA (POP-UP MODAL) ================= */
     #auth-modal {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: var(--bg-color); /* Pantalla completa del color de fondo */
+      background: var(--bg-color);
       display: flex; justify-content: center; align-items: center;
       z-index: 9999;
     }
@@ -60,7 +53,6 @@
     .modal-content button:hover { background: #333; }
     .error-msg { color: #d93025; font-size: 0.8rem; display: none; margin-top: 10px; }
 
-    /* ================= HEADER MINIMALISTA ================= */
     header {
       display: flex; justify-content: space-between; align-items: center;
       padding: 40px 5%;
@@ -73,19 +65,17 @@
       font-size: 0.8rem; color: var(--text-muted);
     }
 
-    /* ================= TÍTULO GIGANTE ================= */
     .hero-title {
       padding: 0 5%;
       font-family: 'Playfair Display', serif;
-      font-size: clamp(3rem, 8vw, 6rem); /* Responsive typography */
+      font-size: clamp(3rem, 8vw, 6rem); 
       line-height: 1; margin: 20px 0 60px 0;
       letter-spacing: -2px;
     }
 
-    /* ================= GRILLA ASIMÉTRICA ================= */
     .gallery-container {
       padding: 0 5% 100px;
-      display: none; /* Oculto hasta login */
+      display: none; 
     }
     .grid {
       display: grid;
@@ -97,10 +87,9 @@
       display: block; cursor: pointer;
     }
     
-    /* Variaciones de tamaño para asimetría */
-    .album-card:nth-child(3n+1) { grid-column: span 8; } /* Grande */
-    .album-card:nth-child(3n+2) { grid-column: span 4; } /* Pequeña */
-    .album-card:nth-child(3n+3) { grid-column: span 6; } /* Mediana */
+    .album-card:nth-child(3n+1) { grid-column: span 8; } 
+    .album-card:nth-child(3n+2) { grid-column: span 4; } 
+    .album-card:nth-child(3n+3) { grid-column: span 6; } 
 
     .album-image-wrapper {
       width: 100%; aspect-ratio: 4/3;
@@ -127,7 +116,6 @@
       margin: 2px 0 0; font-size: 0.75rem; color: var(--text-muted);
     }
 
-    /* Responsive */
     @media (max-width: 768px) {
       .grid { display: flex; flex-direction: column; gap: 50px; }
       .album-card { width: 100%; }
@@ -137,143 +125,9 @@
 </head>
 <body>
 
-  <!-- MODAL DE ACCESO (BARRERA) -->
   <div id="auth-modal">
     <div class="modal-content">
       <h1>Piscoya.</h1>
       <p>Archivo Histórico Familiar</p>
       <input type="email" id="user-email" placeholder="Correo electrónico" required>
-      <input type="password" id="birth-year" placeholder="Año de nacimiento (Ej: 1965)" required>
-      <button onclick="verificarAcceso()">Ingresar al archivo</button>
-      <p id="error-msg" class="error-msg">Credenciales incorrectas.</p>
-    </div>
-  </div>
-
-  <!-- HEADER -->
-  <header>
-    <div class="logo">Piscoya.</div>
-    <div class="user-info" id="user-display"></div>
-  </header>
-
-  <!-- TÍTULO PRINCIPAL -->
-  <h1 class="hero-title">Álbumes<br>Fotográficos</h1>
-
-  <!-- GALERÍA -->
-  <main class="gallery-container" id="galeria-container">
-    <div class="grid" id="grid-albumes">
-      <!-- Los álbumes se cargan aquí desde Supabase -->
-    </div>
-  </main>
-
-  <!-- SCRIPTS -->
-  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
-  
-  <script>
-    // ================= CONFIGURACIÓN SUPABASE =================
-    const SUPABASE_URL = 'https://mpgpvxrqnulskmepmur.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // ================= FANCYBOX (VISOR) =================
-    Fancybox.bind('[data-fancybox]', {
-      Carousel: { transition: "fade" },
-      Images: { zoom: false },
-      Toolbar: { display: { left: ["infobar"], middle: [], right: ["close"] } }
-    });
-
-    // ================= VALIDACIÓN AL CARGAR =================
-    document.addEventListener('DOMContentLoaded', () => {
-      const usuarioActivo = localStorage.getItem('usuario_activo');
-      if (usuarioActivo) {
-        desbloquearWeb(usuarioActivo);
-      }
-    });
-
-    // ================= LÓGICA DE INGRESO (CON DIAGNÓSTICO) =================
-    async function verificarAcceso() {
-      try {
-        const email = document.getElementById('user-email').value.trim();
-        const anioStr = document.getElementById('birth-year').value.trim();
-        
-        if (!email || !anioStr) {
-          alert("Por favor, llena ambos campos.");
-          return;
-        }
-
-        const anio = parseInt(anioStr);
-        alert("1. Buscando en Supabase a: " + email + " con el año " + anio);
-
-        const { data, error } = await supabase
-          .from('formulario_familia')
-          .select('*')
-          .eq('correo', email)
-          .eq('anio_nacimiento', anio)
-          .single();
-
-        if (error) {
-          alert("2. ERROR de Supabase: " + error.message + " (Código: " + error.code + ")");
-          document.getElementById('error-msg').style.display = 'block';
-          return;
-        }
-
-        if (data) {
-          alert("3. ¡Éxito! Datos encontrados para: " + data.nombre_completo);
-          localStorage.setItem('usuario_activo', data.nombre_completo);
-          localStorage.setItem('usuario_correo', data.correo);
-          desbloquearWeb(data.nombre_completo);
-        } else {
-          alert("2. No se encontró ningún dato.");
-        }
-
-      } catch (err) {
-        alert("ERROR FATAL en la página: " + err.message);
-      }
-    }
-
-    function desbloquearWeb(nombreUsuario) {
-      document.getElementById('auth-modal').style.display = 'none';
-      document.getElementById('galeria-container').style.display = 'block';
-      document.getElementById('user-display').innerText = `Visualizando como: ${nombreUsuario}`;
-      cargarAlbumes();
-    }
-
-    // ================= CARGAR ÁLBUMES EN LA GRILLA =================
-    async function cargarAlbumes() {
-      const { data: albums, error } = await supabase
-        .from('albums')
-        .select('*')
-        .order('id', { ascending: true });
-        
-      if (error) { console.error('Error:', error); return; }
-
-      const contenedor = document.getElementById('grid-albumes');
-      contenedor.innerHTML = '';
-
-      albums.forEach((album, index) => {
-        // Formatea el número (ej. "01.", "02.")
-        const numeroFormateado = String(index + 1).padStart(2, '0') + ".";
-        
-        const card = document.createElement('a');
-        card.className = 'album-card';
-        card.href = album.cover_url;
-        card.setAttribute('data-fancybox', `gallery-${album.id}`);
-        card.setAttribute('data-caption', album.title);
-
-        card.innerHTML = `
-          <div class="album-image-wrapper">
-            <img src="${album.cover_url}" alt="${album.title}" loading="lazy">
-          </div>
-          <div class="album-meta">
-            <div class="album-number">${numeroFormateado}</div>
-            <div class="album-details">
-              <h3>${album.title}</h3>
-              <p>${album.photo_count || 0} fotografías</p>
-            </div>
-          </div>
-        `;
-        contenedor.appendChild(card);
-      });
-    }
-  </script>
-</body>
-</html>
+      <input type="password" id="birth-year" placeholder="Año de nacimiento (
