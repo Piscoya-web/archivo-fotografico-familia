@@ -30,7 +30,7 @@
       z-index: 9999;
     }
     .modal-content {
-      max-width: 350px; text-align: center;
+      max-width: 350px; width: 90%; text-align: center;
     }
     .modal-content h1 {
       font-family: 'Playfair Display', serif;
@@ -39,16 +39,16 @@
     .modal-content p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 30px; }
     .modal-content input {
       width: 100%; padding: 15px; margin-bottom: 15px;
-      border: 1px solid #ddd; background: transparent;
-      border-radius: 0; font-family: 'Inter', sans-serif;
-      box-sizing: border-box; text-align: center;
+      border: 1px solid #ddd; background: #ffffff; color: #111;
+      border-radius: 4px; font-family: 'Inter', sans-serif;
+      box-sizing: border-box; text-align: center; font-size: 1rem;
     }
     .modal-content button {
       width: 100%; padding: 15px;
       background: var(--text-main); color: #fff;
       border: none; cursor: pointer; font-size: 0.9rem;
       letter-spacing: 1px; text-transform: uppercase;
-      transition: background 0.3s;
+      border-radius: 4px; transition: background 0.3s;
     }
     .modal-content button:hover { background: #333; }
     .error-msg { color: #d93025; font-size: 0.8rem; display: none; margin-top: 10px; }
@@ -129,5 +129,114 @@
     <div class="modal-content">
       <h1>Piscoya.</h1>
       <p>Archivo Histórico Familiar</p>
+      
       <input type="email" id="user-email" placeholder="Correo electrónico" required>
-      <input type="password" id="birth-year" placeholder="Año de nacimiento (
+      <input type="password" id="birth-year" placeholder="Año de nacimiento (Ej: 1965)" required>
+      <button onclick="verificarAcceso()">Ingresar al archivo</button>
+      
+      <p id="error-msg" class="error-msg">Credenciales incorrectas.</p>
+    </div>
+  </div>
+
+  <header>
+    <div class="logo">Piscoya.</div>
+    <div class="user-info" id="user-display"></div>
+  </header>
+
+  <h1 class="hero-title">Álbumes<br>Fotográficos</h1>
+
+  <main class="gallery-container" id="galeria-container">
+    <div class="grid" id="grid-albumes"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+  
+  <script>
+    const SUPABASE_URL = 'https://mpgpvxrqnulskmepmur.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk';
+    const clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    Fancybox.bind('[data-fancybox]', {
+      Carousel: { transition: "fade" },
+      Images: { zoom: false },
+      Toolbar: { display: { left: ["infobar"], middle: [], right: ["close"] } }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const usuarioActivo = localStorage.getItem('usuario_activo');
+      if (usuarioActivo) {
+        desbloquearWeb(usuarioActivo);
+      }
+    });
+
+    async function verificarAcceso() {
+      const email = document.getElementById('user-email').value.trim();
+      const anioStr = document.getElementById('birth-year').value.trim();
+      
+      if (!email || !anioStr) {
+        document.getElementById('error-msg').innerText = "Llena todos los campos.";
+        document.getElementById('error-msg').style.display = 'block';
+        return;
+      }
+
+      const { data, error } = await clienteSupabase
+        .from('formulario_familia')
+        .select('nombre_completo, correo')
+        .eq('correo', email)
+        .eq('anio_nacimiento', parseInt(anioStr))
+        .single();
+
+      if (error || !data) {
+        document.getElementById('error-msg').innerText = "Credenciales incorrectas.";
+        document.getElementById('error-msg').style.display = 'block';
+      } else {
+        localStorage.setItem('usuario_activo', data.nombre_completo);
+        localStorage.setItem('usuario_correo', data.correo);
+        desbloquearWeb(data.nombre_completo);
+      }
+    }
+
+    function desbloquearWeb(nombreUsuario) {
+      document.getElementById('auth-modal').style.display = 'none';
+      document.getElementById('galeria-container').style.display = 'block';
+      document.getElementById('user-display').innerText = `Visualizando como: ${nombreUsuario}`;
+      cargarAlbumes();
+    }
+
+    async function cargarAlbumes() {
+      const { data: albums, error } = await clienteSupabase
+        .from('albums')
+        .select('*')
+        .order('id', { ascending: true });
+        
+      if (error) { console.error('Error:', error); return; }
+
+      const contenedor = document.getElementById('grid-albumes');
+      contenedor.innerHTML = '';
+
+      albums.forEach((album, index) => {
+        const numeroFormateado = String(index + 1).padStart(2, '0') + ".";
+        const card = document.createElement('a');
+        card.className = 'album-card';
+        card.href = album.cover_url;
+        card.setAttribute('data-fancybox', `gallery-${album.id}`);
+        card.setAttribute('data-caption', album.title);
+
+        card.innerHTML = `
+          <div class="album-image-wrapper">
+            <img src="${album.cover_url}" alt="${album.title}" loading="lazy">
+          </div>
+          <div class="album-meta">
+            <div class="album-number">${numeroFormateado}</div>
+            <div class="album-details">
+              <h3>${album.title}</h3>
+              <p>${album.photo_count || 0} fotografías</p>
+            </div>
+          </div>
+        `;
+        contenedor.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>
