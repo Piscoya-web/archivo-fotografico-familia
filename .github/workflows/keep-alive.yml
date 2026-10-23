@@ -1,0 +1,16 @@
+name: Mantener Supabase Activo
+
+on:
+  schedule:
+    # Se ejecuta automáticamente todos los lunes y jueves a las 08:00 UTC
+    - cron: '0 8 * * 1,4'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consultar tabla albums para evitar pausa
+        run: |
+          curl -X GET "https://mqpgvxrqnulskmepmuri.supabase.co/rest/v1/albums?select=id&limit=1" \
+          -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk"
