@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Archivo Fotográfico Familia Piscoya</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -28,29 +28,64 @@
       background: var(--bg-color);
       display: flex; justify-content: center; align-items: center;
       z-index: 9999;
+      padding: 20px;
+      box-sizing: border-box;
     }
     .modal-content {
-      max-width: 350px; width: 90%; text-align: center;
+      max-width: 400px; width: 100%; text-align: center;
+      background: #ffffff; padding: 35px 30px;
+      border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      box-sizing: border-box;
     }
     .modal-content h1 {
       font-family: 'Playfair Display', serif;
-      font-size: 2.5rem; margin-bottom: 5px;
+      font-size: 2.5rem; margin: 0 0 4px 0;
     }
-    .modal-content p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; }
+    .modal-content p.subtitle {
+      font-size: 0.9rem; color: var(--text-muted); margin: 0 0 15px 0;
+    }
+    .trust-note {
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: #555555;
+      background: #f8f8f6;
+      border-left: 3px solid var(--text-main);
+      padding: 10px 12px;
+      margin-bottom: 20px;
+      text-align: left;
+      border-radius: 0 4px 4px 0;
+    }
+    
+    .tabs {
+      display: flex; border-bottom: 1px solid #e0e0e0; margin-bottom: 18px;
+    }
+    .tab-btn {
+      flex: 1; padding: 10px; background: none; border: none;
+      font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500;
+      color: var(--text-muted); cursor: pointer;
+      border-bottom: 2px solid transparent; transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--text-main); border-bottom: 2px solid var(--text-main); font-weight: 600;
+    }
+
     .modal-content input {
-      width: 100%; padding: 12px; margin-bottom: 12px;
-      border: 1px solid #ddd; background: #ffffff; color: #111;
+      width: 100%; padding: 12px; margin-bottom: 10px;
+      border: 1px solid #ddd; background: #fafafa; color: #111;
       border-radius: 4px; font-family: 'Inter', sans-serif;
-      box-sizing: border-box; text-align: center; font-size: 0.95rem;
+      box-sizing: border-box; text-align: center; font-size: 0.9rem;
     }
-    .modal-content button {
-      width: 100%; padding: 15px; margin-top: 5px;
+    .modal-content input:focus {
+      outline: none; border-color: #111; background: #fff;
+    }
+    .submit-btn {
+      width: 100%; padding: 14px; margin-top: 6px;
       background: var(--text-main); color: #fff;
-      border: none; cursor: pointer; font-size: 0.9rem;
+      border: none; cursor: pointer; font-size: 0.85rem;
       letter-spacing: 1px; text-transform: uppercase;
       border-radius: 4px; transition: background 0.3s;
     }
-    .modal-content button:hover { background: #333; }
+    .submit-btn:hover { background: #333; }
     
     .status-msg { 
       font-size: 0.85rem; display: none; margin-top: 15px; font-weight: 500;
@@ -64,9 +99,17 @@
       font-family: 'Inter', sans-serif;
       font-weight: 600; font-size: 1.2rem; letter-spacing: -0.5px;
     }
+    .user-bar {
+      display: flex; align-items: center; gap: 15px;
+    }
     .user-info {
       font-size: 0.8rem; color: var(--text-muted);
     }
+    .logout-btn {
+      background: transparent; border: 1px solid #ccc; color: var(--text-main);
+      padding: 5px 10px; font-size: 0.75rem; border-radius: 4px; cursor: pointer;
+    }
+    .logout-btn:hover { background: #e6e6e6; }
 
     .hero-title {
       padding: 0 5%;
@@ -121,14 +164,29 @@
   <div id="auth-modal">
     <div class="modal-content">
       <h1>Piscoya.</h1>
-      <p>Archivo Histórico Familiar</p>
+      <p class="subtitle">Archivo Histórico Familiar</p>
+
+      <div class="trust-note">
+        Este espacio es exclusivo para nuestra familia. Te pedimos estos datos únicamente para saber quiénes nos visitan, compartir nuevos recuerdos y mantenernos en contacto.
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-registro" onclick="cambiarModo('registro')">Nuevo Registro</button>
+        <button class="tab-btn" id="tab-login" onclick="cambiarModo('login')">Ya tengo cuenta</button>
+      </div>
       
-      <input type="text" id="user-name" placeholder="Nombre completo" required>
-      <input type="text" id="user-rel" placeholder="Parentesco (Ej: Primo, Tío)" required>
+      <!-- Campos exclusivos de Registro -->
+      <div id="campos-registro">
+        <input type="text" id="user-name" placeholder="Nombre completo">
+        <input type="text" id="user-rel" placeholder="Parentesco (Ej: Primo, Tío, Sobrina)">
+        <input type="tel" id="user-phone" placeholder="Teléfono / WhatsApp">
+      </div>
+
+      <!-- Campos compartidos (Correo + Año de nacimiento como contraseña) -->
       <input type="email" id="user-email" placeholder="Correo electrónico" required>
-      <input type="number" id="birth-year" placeholder="Año de nacimiento (Ej: 1965)" required>
+      <input type="number" id="birth-year" placeholder="Año de nacimiento (Contraseña, ej: 1965)" required>
       
-      <button onclick="registrarEIngresar()">Ingresar al archivo</button>
+      <button class="submit-btn" id="btn-accion" onclick="procesarAcceso()">Registrarme e Ingresar</button>
       
       <p id="status-msg" class="status-msg"></p>
     </div>
@@ -136,7 +194,10 @@
 
   <header>
     <div class="logo">Piscoya.</div>
-    <div class="user-info" id="user-display"></div>
+    <div class="user-bar">
+      <div class="user-info" id="user-display"></div>
+      <button class="logout-btn" id="logout-btn" style="display:none;" onclick="cerrarSesion()">Salir</button>
+    </div>
   </header>
 
   <h1 class="hero-title">Álbumes<br>Fotográficos</h1>
@@ -145,7 +206,6 @@
     <div class="grid" id="grid-albumes"></div>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
   
   <script>
@@ -155,6 +215,30 @@
     const clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: { persistSession: false }
     });
+
+    let modoActual = 'registro';
+
+    function cambiarModo(modo) {
+      modoActual = modo;
+      const camposRegistro = document.getElementById('campos-registro');
+      const tabRegistro = document.getElementById('tab-registro');
+      const tabLogin = document.getElementById('tab-login');
+      const btnAccion = document.getElementById('btn-accion');
+      const statusMsg = document.getElementById('status-msg');
+      statusMsg.style.display = 'none';
+
+      if (modo === 'login') {
+        camposRegistro.style.display = 'none';
+        tabLogin.classList.add('active');
+        tabRegistro.classList.remove('active');
+        btnAccion.innerText = 'Ingresar al archivo';
+      } else {
+        camposRegistro.style.display = 'block';
+        tabRegistro.classList.add('active');
+        tabLogin.classList.remove('active');
+        btnAccion.innerText = 'Registrarme e Ingresar';
+      }
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
       Fancybox.bind('[data-fancybox]', {
@@ -169,20 +253,27 @@
       }
     });
 
-    async function registrarEIngresar() {
+    async function procesarAcceso() {
       const statusMsg = document.getElementById('status-msg');
       statusMsg.style.display = 'block';
       statusMsg.style.color = '#0066cc';
-      statusMsg.innerText = "Procesando...";
+      statusMsg.innerText = "Verificando...";
 
       const nombre = document.getElementById('user-name').value.trim();
       const parentesco = document.getElementById('user-rel').value.trim();
+      const telefono = document.getElementById('user-phone').value.trim();
       const email = document.getElementById('user-email').value.trim().toLowerCase();
       const anio = document.getElementById('birth-year').value.trim();
-      
-      if (!nombre || !parentesco || !email || !anio) {
+
+      if (!email || !anio) {
         statusMsg.style.color = '#d93025';
-        statusMsg.innerText = "Por favor, completa todos los campos.";
+        statusMsg.innerText = "Ingresa tu correo y año de nacimiento.";
+        return;
+      }
+
+      if (modoActual === 'registro' && (!nombre || !parentesco || !telefono)) {
+        statusMsg.style.color = '#d93025';
+        statusMsg.innerText = "Por favor, completa todos tus datos de registro.";
         return;
       }
 
@@ -201,13 +292,19 @@
           if (String(usuarioExistente.anio_nacimiento) === String(anio)) {
             usuarioValido = usuarioExistente;
             statusMsg.style.color = '#0f9d58';
-            statusMsg.innerText = "¡Qué bueno verte de nuevo, " + usuarioValido.nombre_completo + "!";
+            statusMsg.innerText = "¡Bienvenido/a de nuevo, " + usuarioValido.nombre_completo + "!";
           } else {
             statusMsg.style.color = '#d93025';
-            statusMsg.innerText = "Este correo ya está registrado con otro año de nacimiento.";
+            statusMsg.innerText = "Año de nacimiento incorrecto para este correo.";
             return;
           }
         } else {
+          if (modoActual === 'login') {
+            statusMsg.style.color = '#d93025';
+            statusMsg.innerText = "Correo no registrado. Usa la pestaña 'Nuevo Registro'.";
+            return;
+          }
+
           const { data: nuevoUsuario, error: insertError } = await clienteSupabase
             .from('formulario_familia')
             .insert([
@@ -215,6 +312,7 @@
                 nombre_completo: nombre, 
                 correo: email, 
                 parentesco: parentesco, 
+                telefono: telefono,
                 anio_nacimiento: parseInt(anio) 
               }
             ])
@@ -233,12 +331,12 @@
           
           setTimeout(() => {
             desbloquearWeb(usuarioValido.nombre_completo);
-          }, 1200);
+          }, 1000);
         }
 
       } catch (err) {
         statusMsg.style.color = '#d93025';
-        statusMsg.innerText = "Error: Verifica los permisos en Supabase. " + err.message;
+        statusMsg.innerText = "Error al conectar: " + err.message;
         console.error("Detalle del error:", err);
       }
     }
@@ -247,11 +345,17 @@
       document.getElementById('auth-modal').style.display = 'none';
       document.getElementById('galeria-container').style.display = 'block';
       document.getElementById('user-display').innerText = `Visualizando como: ${nombreUsuario}`;
+      document.getElementById('logout-btn').style.display = 'inline-block';
       cargarAlbumes();
     }
 
+    function cerrarSesion() {
+      localStorage.removeItem('usuario_activo');
+      localStorage.removeItem('usuario_correo');
+      location.reload();
+    }
+
     async function cargarAlbumes() {
-      // 1. Traemos los álbumes
       const { data: albums, error: albumsError } = await clienteSupabase
         .from('albums')
         .select('*')
@@ -259,7 +363,6 @@
         
       if (albumsError) return;
 
-      // 2. Traemos TODAS las fotos evadiendo el límite de 1000 de Supabase
       let photos = [];
       let from = 0;
       let to = 999;
@@ -271,18 +374,15 @@
           .select('*')
           .range(from, to);
 
-        if (photosError) {
-          console.error("Error al cargar las fotos:", photosError);
-          break;
-        }
+        if (photosError) break;
 
         photos = photos.concat(batch);
 
         if (batch.length < 1000) {
-          hayMasFotos = false; // Ya no hay más fotos que traer
+          hayMasFotos = false;
         } else {
           from += 1000;
-          to += 1000; // Pedimos el siguiente lote de 1000 fotos
+          to += 1000;
         }
       }
 
@@ -292,11 +392,9 @@
       albums.forEach((album, index) => {
         const numeroFormateado = String(index + 1).padStart(2, '0') + ".";
 
-        // Contenedor envolvente para el álbum y sus fotos ocultas
         const divAlbum = document.createElement('div');
         divAlbum.style.display = 'contents'; 
 
-        // Creamos la portada (visible)
         const card = document.createElement('a');
         card.className = 'album-card';
         card.href = album.cover_url; 
@@ -317,19 +415,15 @@
         `;
         divAlbum.appendChild(card);
 
-        // Buscamos las fotos que pertenecen a este álbum y las añadimos ocultas
         if (photos) {
-          // Aseguramos de que el tipo de dato coincida (convirtiendo ambos a String)
           const fotosDelAlbum = photos.filter(p => String(p.album_id) === String(album.id));
           
           fotosDelAlbum.forEach(foto => {
             const hiddenLink = document.createElement('a');
-            
             hiddenLink.href = foto.url; 
             hiddenLink.setAttribute('data-fancybox', `gallery-${album.id}`); 
             hiddenLink.setAttribute('data-caption', foto.caption || ''); 
             hiddenLink.style.display = 'none'; 
-            
             divAlbum.appendChild(hiddenLink);
           });
         }
