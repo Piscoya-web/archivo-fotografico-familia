@@ -33,7 +33,8 @@
     .modal label.campo { display: block; text-align: left; font-size: .75rem; color: var(--muted); margin: 0 0 4px 2px; }
     .modal input[type=text], .modal input[type=email], .modal input[type=password], .modal input[type=tel], .modal input[type=number] {
       width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; background: #fafafa; color: #111; border-radius: 4px; font: inherit; font-size: .9rem; }
-    .modal input:focus { outline: none; border-color: #111; background: #fff; }
+    .modal input:focus, .modal select:focus { outline: none; border-color: #111; background: #fff; }
+    .modal select.campo-select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; background: #fafafa; color: #111; border-radius: 4px; font: inherit; font-size: .9rem; }
     .check { display: flex; gap: 8px; text-align: left; font-size: .8rem; color: #444; line-height: 1.4; margin: 4px 0 10px; }
     .btn { width: 100%; padding: 14px; margin-top: 6px; background: var(--ink); color: #fff; border: 0; cursor: pointer; font-size: .85rem; letter-spacing: 1px; text-transform: uppercase; border-radius: 4px; }
     .btn:hover { background: #333; } .btn:disabled { opacity: .6; cursor: wait; }
@@ -177,13 +178,23 @@
 
       <form id="f-crear" novalidate>
         <input type="text" id="c-nombre" placeholder="Nombre completo" autocomplete="name">
-        <input type="text" id="c-parentesco" placeholder="Parentesco (ej.: primo, tía, sobrina)">
+        <select id="c-parentesco-lista" class="campo-select">
+          <option value="">Parentesco: elige una opción</option>
+          <option>Hijo/a</option><option>Nieto/a</option><option>Bisnieto/a</option>
+          <option>Hermano/a</option><option>Sobrino/a</option><option>Primo/a</option><option>Tío/a</option>
+          <option>Esposo/a o pareja de un familiar</option>
+          <option value="otro">Otro parentesco (escribirlo)</option>
+          <option value="amigo">Amigo/a de la familia (sin parentesco)</option>
+        </select>
+        <input type="text" id="c-parentesco" placeholder="Escribe tu parentesco (ej.: cuñada, ahijado)" hidden>
         <input type="tel" id="c-telefono" placeholder="Teléfono / WhatsApp" autocomplete="tel">
         <input type="email" id="c-correo" placeholder="Correo electrónico" autocomplete="email">
         <input type="number" id="c-anio" placeholder="Año de nacimiento (será tu clave, ej.: 1965)" inputmode="numeric">
+        <div id="c-campos-arbol">
         <label class="campo" for="c-hijo">Para ubicarte en el árbol familiar (opcional):</label>
         <input type="text" id="c-hijo" placeholder="¿De quién eres hijo o hija? (nombre completo)">
         <label class="check"><input type="checkbox" id="c-arbol" checked> Acepto aparecer con mi nombre en el árbol familiar (solo lo ven los familiares registrados).</label>
+        </div>
         <button class="btn" type="submit">Registrarme e ingresar</button>
       </form>
 
@@ -283,6 +294,10 @@
   }
   $('#t-entrar').onclick = () => modo('entrar');
   $('#t-crear').onclick = () => modo('crear');
+  $('#c-parentesco-lista').onchange = e => {
+    $('#c-parentesco').hidden = e.target.value !== 'otro';
+    $('#c-campos-arbol').hidden = e.target.value === 'amigo';   // los amigos no entran al árbol
+  };
   const bloquear = (f, si) => f.querySelectorAll('button[type=submit]').forEach(b => b.disabled = si);
 
   async function entrarCon(correo, anio) {
@@ -310,10 +325,13 @@
 
   $('#f-crear').addEventListener('submit', async e => {
     e.preventDefault();
+    const opcion = $('#c-parentesco-lista').value, amigo = opcion === 'amigo';
     const d = {
       nombre: $('#c-nombre').value.trim(), correo: $('#c-correo').value.trim().toLowerCase(),
-      telefono: $('#c-telefono').value.trim(), anio: parseInt($('#c-anio').value, 10), hijo_de: $('#c-hijo').value.trim(),
-      parentesco: $('#c-parentesco').value.trim(), acepta_arbol: $('#c-arbol').checked
+      telefono: $('#c-telefono').value.trim(), anio: parseInt($('#c-anio').value, 10),
+      hijo_de: amigo ? '' : $('#c-hijo').value.trim(),
+      parentesco: amigo ? 'Amigo/a de la familia' : opcion === 'otro' ? $('#c-parentesco').value.trim() : opcion,
+      acepta_arbol: !amigo && $('#c-arbol').checked
     };
     if (!d.nombre || !d.parentesco || !d.telefono || !d.correo || !d.anio) return msg('Por favor, completa todos tus datos.', 'error');
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.correo)) return msg('Revisa el correo electrónico.', 'error');
