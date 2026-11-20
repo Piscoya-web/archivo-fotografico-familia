@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Archivo Fotográfico Piscoya Rivera</title>
+  <meta name="description" content="Archivo fotográfico y memoria de la familia Piscoya Rivera. Acceso solo para familiares.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.36/dist/fancybox/fancybox.css">
+  <style>
+    :root {
+      --bg: #f4f4f2; --paper: #ffffff; --ink: #111111; --muted: #666666;
+      --line: #e2e2de; --accent: #8a5a2b; --chip: #ebebe7; --ok: #0f7b3f; --bad: #b3261e; --info: #0b57d0;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; overflow-x: hidden; }
+    a { color: inherit; }
+    button { font-family: inherit; }
+    .wrap { padding: 0 5%; }
+    [hidden] { display: none !important; }
+
+    /* ---------- Pantallas de acceso ---------- */
+    .pantalla { position: fixed; inset: 0; background: var(--bg); display: flex; justify-content: center; align-items: flex-start; z-index: 9999; padding: 40px 16px; overflow-y: auto; }
+    .modal { max-width: 420px; width: 100%; margin: auto; text-align: center; background: var(--paper); padding: 32px 26px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.06); }
+    .modal h1 { font-family: 'Playfair Display', serif; font-size: 2rem; line-height: 1.15; margin: 0 0 6px; }
+    .modal .sub { font-size: .9rem; color: var(--muted); margin: 0 0 15px; }
+    .nota { font-size: .8rem; line-height: 1.45; color: #555; background: #f8f8f6; border-left: 3px solid var(--ink); padding: 10px 12px; margin-bottom: 18px; text-align: left; border-radius: 0 4px 4px 0; }
+    .tabs { display: flex; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+    .tab { flex: 1; padding: 10px; background: none; border: 0; font-size: .85rem; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
+    .tab.on { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+    .modal label.campo { display: block; text-align: left; font-size: .75rem; color: var(--muted); margin: 0 0 4px 2px; }
+    .modal input[type=text], .modal input[type=email], .modal input[type=password], .modal input[type=tel], .modal input[type=number] {
+      width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; background: #fafafa; color: #111; border-radius: 4px; font: inherit; font-size: .9rem; }
+    .modal input:focus { outline: none; border-color: #111; background: #fff; }
+    .check { display: flex; gap: 8px; text-align: left; font-size: .8rem; color: #444; line-height: 1.4; margin: 4px 0 10px; }
+    .btn { width: 100%; padding: 14px; margin-top: 6px; background: var(--ink); color: #fff; border: 0; cursor: pointer; font-size: .85rem; letter-spacing: 1px; text-transform: uppercase; border-radius: 4px; }
+    .btn:hover { background: #333; } .btn:disabled { opacity: .6; cursor: wait; }
+    .enlace { background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: .8rem; margin-top: 12px; }
+    .msg { font-size: .85rem; margin: 14px 0 0; font-weight: 500; min-height: 1em; line-height: 1.45; }
+
+    /* ---------- Cabecera ---------- */
+    header.top { display: flex; justify-content: space-between; align-items: center; gap: 16px 20px; padding: 32px 5%; flex-wrap: wrap; }
+    .logo { font-weight: 600; font-size: 1.15rem; letter-spacing: -.5px; text-decoration: none; }
+    nav.menu { display: flex; gap: 20px; font-size: .85rem; flex-wrap: wrap; }
+    nav.menu a { text-decoration: none; color: var(--muted); padding-bottom: 3px; border-bottom: 1px solid transparent; }
+    nav.menu a.on, nav.menu a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+    .user { display: flex; align-items: center; gap: 12px; font-size: .8rem; color: var(--muted); }
+    .salir { background: transparent; border: 1px solid #ccc; color: var(--ink); padding: 5px 10px; font-size: .75rem; border-radius: 4px; cursor: pointer; }
+    .salir:hover { background: #e6e6e6; }
+
+    .hero { font-family: 'Playfair Display', serif; font-size: clamp(2.6rem, 7vw, 5.5rem); line-height: 1.05; margin: 10px 0 18px; letter-spacing: -2px; font-weight: 400; }
+    .hero.chico { font-size: clamp(2.2rem, 5vw, 4rem); }
+    .lead { max-width: 640px; color: var(--muted); font-size: .95rem; line-height: 1.6; margin: 0 0 36px; }
+    .stats { display: flex; gap: 40px; flex-wrap: wrap; margin-bottom: 46px; }
+    .stat b { display: block; font-size: 2rem; font-weight: 300; letter-spacing: -1px; }
+    .stat span { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+    .buscador { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+    .buscador input { flex: 1 1 260px; padding: 13px 16px; border: 1px solid #d8d8d4; border-radius: 4px; font: inherit; font-size: .95rem; background: #fff; min-width: 0; }
+    .buscador input:focus { outline: none; border-color: var(--ink); }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+    .chip { background: var(--chip); border: 0; border-radius: 99px; padding: 7px 14px; font-size: .78rem; cursor: pointer; color: var(--ink); }
+    .chip.on { background: var(--ink); color: #fff; }
+    .chips .etq { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; align-self: center; margin-right: 4px; }
+
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 44px 20px; padding-bottom: 100px; }
+    .album { text-decoration: none; color: inherit; display: block; }
+    .album:nth-child(3n+1) { grid-column: span 8; }
+    .album:nth-child(3n+2) { grid-column: span 4; }
+    .album:nth-child(3n+3) { grid-column: span 6; }
+    .album:nth-child(6n+4) { grid-column: span 6; }
+    .marco { width: 100%; aspect-ratio: 4/3; overflow: hidden; background: #e6e6e2; display: block; }
+    .marco img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .8s cubic-bezier(.2,.8,.2,1); }
+    .album:hover img { transform: scale(1.04); }
+    .meta { margin-top: 15px; display: flex; gap: 15px; }
+    .num { font-size: 2.4rem; font-weight: 300; line-height: .8; letter-spacing: -1px; }
+    .meta h3 { margin: 0; font-size: .92rem; font-weight: 600; }
+    .meta p { margin: 3px 0 0; font-size: .75rem; color: var(--muted); }
+
+    .volver { display: inline-block; font-size: .8rem; color: var(--muted); text-decoration: none; margin-bottom: 10px; }
+    .volver:hover { color: var(--ink); }
+    .fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; padding-bottom: 100px; }
+    .foto { position: relative; display: block; aspect-ratio: 1; overflow: hidden; background: #e6e6e2; }
+    .foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s ease; }
+    .foto:hover img { transform: scale(1.05); }
+    .foto .marca { position: absolute; left: 8px; bottom: 8px; background: rgba(17,17,17,.75); color: #fff; font-size: .65rem; padding: 3px 7px; border-radius: 3px; }
+
+    .historias { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px 24px; padding-bottom: 100px; }
+    .historia { background: var(--paper); border-radius: 6px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,.04); display: flex; flex-direction: column; }
+    .historia .marco { aspect-ratio: 3/2; cursor: zoom-in; }
+    .historia .txt { padding: 16px 18px 20px; }
+    .historia .cuando { font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 6px; }
+    .historia p { margin: 0 0 10px; font-size: .9rem; line-height: 1.5; font-family: 'Playfair Display', serif; }
+    .historia .quien { font-size: .75rem; color: var(--muted); line-height: 1.5; }
+    .historia .quien button { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font-size: inherit; }
+    .decada { grid-column: 1 / -1; font-family: 'Playfair Display', serif; font-size: 2rem; margin: 20px 0 -8px; border-top: 1px solid var(--line); padding-top: 18px; }
+
+    /* ---------- Árbol ---------- */
+    .arbol-caja { overflow-x: auto; padding: 10px 0 60px; margin-bottom: 40px; -webkit-overflow-scrolling: touch; }
+    .arbol, .arbol ul { list-style: none; margin: 0; padding: 0; }
+    .arbol ul { padding-left: 28px; border-left: 1px solid #cfcfca; margin-left: 14px; }
+    .arbol li { position: relative; padding: 8px 0 0 0; }
+    .arbol ul > li::before { content: ''; position: absolute; left: -28px; top: 26px; width: 24px; border-top: 1px solid #cfcfca; }
+    .familia { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .persona { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; font-size: .85rem; cursor: pointer; text-align: left; color: var(--ink); }
+    .persona:hover { border-color: var(--ink); }
+    .persona small { display: block; color: var(--muted); font-size: .7rem; margin-top: 2px; }
+    .persona.confirmar { border-style: dashed; }
+    .persona.yo { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(138,90,43,.15); }
+    .y { font-size: .75rem; color: var(--muted); }
+    .ref { font-size: .72rem; color: var(--muted); font-style: italic; }
+
+    /* ---------- Administrar ---------- */
+    .panel { background: var(--paper); border-radius: 8px; padding: 20px; margin-bottom: 28px; box-shadow: 0 4px 14px rgba(0,0,0,.03); }
+    .panel h2 { font-family: 'Playfair Display', serif; font-weight: 400; margin: 0 0 12px; font-size: 1.5rem; }
+    .tabla { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .tabla th, .tabla td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .tabla-caja { overflow-x: auto; }
+    .mini-btn { border: 0; border-radius: 4px; padding: 6px 10px; font-size: .75rem; cursor: pointer; color: #fff; background: var(--ink); margin: 2px; }
+    .mini-btn.ok { background: var(--ok); } .mini-btn.bad { background: var(--bad); } .mini-btn.gris { background: #888; }
+    .form-fila { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+    .form-fila input, .form-fila select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font: inherit; font-size: .85rem; min-width: 0; flex: 1 1 160px; }
+    .progreso { height: 8px; background: var(--chip); border-radius: 99px; overflow: hidden; margin: 10px 0; }
+    .progreso div { height: 100%; width: 0; background: var(--ok); transition: width .3s; }
+
+    .vacio { color: var(--muted); padding: 40px 0 100px; line-height: 1.6; }
+    footer { padding: 30px 5% 50px; font-size: .75rem; color: var(--muted); border-top: 1px solid var(--line); }
+    .pie { max-width: 720px; margin: 0 auto; text-align: left; line-height: 1.5; }
+    .pie .h { font-family: 'Playfair Display', serif; font-size: 1.05rem; }
+    .pie .d { font-size: .8rem; opacity: .75; margin-top: 4px; }
+
+    @media (max-width: 768px) {
+      header.top { padding: 20px 16px; }
+      .wrap { padding: 0 16px; }
+      nav.menu { order: 3; width: 100%; }
+      .grid { display: flex; flex-direction: column; gap: 46px; }
+      .fotos { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+      .stats { gap: 26px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ====== Acceso ====== -->
+  <div class="pantalla" id="p-acceso" hidden>
+    <div class="modal">
+      <h1>Familia Piscoya Rivera.</h1>
+      <p class="sub">Archivo Fotográfico Familiar</p>
+      <div class="nota">Este espacio es exclusivo para nuestra familia. Te pedimos estos datos únicamente para saber quiénes nos visitan, compartir nuevos recuerdos y mantenernos en contacto.</div>
+      <div class="tabs">
+        <button class="tab on" id="t-crear" type="button">Nuevo registro</button>
+        <button class="tab" id="t-entrar" type="button">Ya estoy registrado</button>
+      </div>
+
+      <form id="f-crear" novalidate>
+        <input type="text" id="c-nombre" placeholder="Nombre completo" autocomplete="name">
+        <input type="text" id="c-parentesco" placeholder="Parentesco (ej.: primo, tía, sobrina)">
+        <input type="tel" id="c-telefono" placeholder="Teléfono / WhatsApp" autocomplete="tel">
+        <input type="email" id="c-correo" placeholder="Correo electrónico" autocomplete="email">
+        <input type="number" id="c-anio" placeholder="Año de nacimiento (será tu clave, ej.: 1965)" inputmode="numeric">
+        <label class="campo" for="c-hijo">Para ubicarte en el árbol familiar (opcional):</label>
+        <input type="text" id="c-hijo" placeholder="¿De quién eres hijo o hija? (nombre completo)">
+        <label class="check"><input type="checkbox" id="c-arbol" checked> Acepto aparecer con mi nombre en el árbol familiar (solo lo ven los familiares registrados).</label>
+        <button class="btn" type="submit">Registrarme e ingresar</button>
+      </form>
+
+      <form id="f-entrar" novalidate hidden>
+        <input type="email" id="e-correo" placeholder="Correo electrónico" autocomplete="email">
+        <input type="number" id="e-anio" placeholder="Año de nacimiento (tu clave, ej.: 1965)" inputmode="numeric">
+        <button class="btn" type="submit">Ingresar al archivo</button>
+      </form>
+      <p class="msg" id="msg"></p>
+    </div>
+  </div>
+
+  <!-- ====== En espera / mensajes ====== -->
+  <div class="pantalla" id="p-aviso" hidden>
+    <div class="modal">
+      <h1>Familia Piscoya Rivera.</h1>
+      <p class="sub">Archivo Fotográfico Familiar</p>
+      <div id="aviso-texto" style="line-height:1.6;font-size:.95rem"></div>
+      <button class="btn" id="aviso-btn" type="button" style="margin-top:20px">Salir</button>
+    </div>
+  </div>
+
+  <header class="top" id="cabecera" hidden>
+    <a class="logo" href="#/">Familia Piscoya Rivera.</a>
+    <nav class="menu">
+      <a href="#/" data-nav="inicio">Álbumes</a>
+      <a href="#/historias" data-nav="historias">Historias</a>
+      <a href="#/arbol" data-nav="arbol">Árbol</a>
+      <a href="#/buscar" data-nav="buscar">Buscar</a>
+      <a href="#/admin" data-nav="admin" id="nav-admin" hidden>Administrar</a>
+    </nav>
+    <div class="user"><span id="quien"></span><button class="salir" id="salir" type="button">Salir</button></div>
+  </header>
+
+  <main class="wrap" id="vista"></main>
+  <footer id="pie" hidden>Archivo Fotográfico Familiar Piscoya Rivera · Si reconoces a alguien o conoces la historia de una foto, cuéntanoslo.</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.36/dist/fancybox/fancybox.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+  'use strict';
+  /* ===== Configuración de la familia (para replicar: cambiar estos valores) ===== */
+  const CONFIG = {
+    familia: 'Piscoya Rivera',
+    supabaseUrl: 'https://mqpgvxrqnulskmepmuri.supabase.co',
+    supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk',
+    bucket: 'archivo'
+  };
+  const sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, { auth: { persistSession: true, detectSessionInUrl: true } });
+  const almacen = () => sb.storage.from(CONFIG.bucket);
+  const URL_SITIO = location.origin + location.pathname;
+
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const mostrar = id => ['p-acceso', 'p-aviso'].forEach(p => $('#' + p).hidden = p !== id);
+  const conTiempo = (pr, ms) => Promise.race([pr, new Promise((_, r) => setTimeout(() => r(new Error('timeout')), ms))]);
+  function msg(t, tipo) { const el = $('#msg'); el.textContent = t; el.style.color = tipo === 'error' ? 'var(--bad)' : tipo === 'ok' ? 'var(--ok)' : 'var(--info)'; }
+  function aviso(html, boton = 'Salir', accion = salir) {
+    $('#aviso-texto').innerHTML = html; $('#aviso-btn').textContent = boton; $('#aviso-btn').onclick = accion; mostrar('p-aviso');
+  }
+
+  /* ===== Pantalla de acceso: correo + año de nacimiento (sin contraseñas) ===== */
+  // La "clave" de cada familiar es su año de nacimiento; aquí se completa para cumplir el mínimo de Supabase.
+  const claveDe = anio => `archivo-${anio}-familia`;
+  const anioValido = a => a >= 1900 && a <= new Date().getFullYear();
+  function modo(m) {
+    $('#f-entrar').hidden = m !== 'entrar'; $('#f-crear').hidden = m !== 'crear';
+    $('#t-entrar').classList.toggle('on', m === 'entrar'); $('#t-crear').classList.toggle('on', m === 'crear'); msg('');
+  }
+  $('#t-entrar').onclick = () => modo('entrar');
+  $('#t-crear').onclick = () => modo('crear');
+  const bloquear = (f, si) => f.querySelectorAll('button[type=submit]').forEach(b => b.disabled = si);
+
+  async function entrarCon(correo, anio) {
+    const { error } = await sb.auth.signInWithPassword({ email: correo, password: claveDe(anio) });
+    return !error;
+  }
+
+  $('#f-entrar').addEventListener('submit', async e => {
+    e.preventDefault();
+    const correo = $('#e-correo').value.trim().toLowerCase(), anio = parseInt($('#e-anio').value, 10);
+    if (!correo || !anioValido(anio)) return msg('Escribe tu correo y tu año de nacimiento.', 'error');
+    bloquear(e.target, true); msg('Verificando...');
+    try {
+      if (await entrarCon(correo, anio)) return; // onAuthStateChange sigue
+      // ¿Se registró con el formulario anterior? Se le crea la cuenta con sus mismos datos.
+      const { data } = await sb.rpc('registro_anterior', { p_correo: correo, p_anio: anio });
+      if (data && data.ok) {
+        const r = await sb.auth.signUp({ email: correo, password: claveDe(anio), options: { data: { anio } } });
+        if (!r.error && r.data.session) return;
+        if (!r.error) return msg('Tu cuenta está creada, pero el archivo aún no permite el ingreso automático. Avisa a la administradora.', 'error');
+      }
+      msg('No encontramos ese correo con ese año de nacimiento. Si es tu primera vez, usa «Nuevo registro».', 'error');
+    } finally { bloquear(e.target, false); }
+  });
+
+  $('#f-crear').addEventListener('submit', async e => {
+    e.preventDefault();
+    const d = {
+      nombre: $('#c-nombre').value.trim(), correo: $('#c-correo').value.trim().toLowerCase(),
+      telefono: $('#c-telefono').value.trim(), anio: parseInt($('#c-anio').value, 10), hijo_de: $('#c-hijo').value.trim(),
+      parentesco: $('#c-parentesco').value.trim(), acepta_arbol: $('#c-arbol').checked
+    };
+    if (!d.nombre || !d.parentesco || !d.telefono || !d.correo || !d.anio) return msg('Por favor, completa todos tus datos.', 'error');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.correo)) return msg('Revisa el correo electrónico.', 'error');
+    if (!anioValido(d.anio)) return msg('Revisa el año de nacimiento.', 'error');
+    bloquear(e.target, true); msg('Registrando...');
+    try {
+      const { data, error } = await sb.auth.signUp({
+        email: d.correo, password: claveDe(d.anio),
+        options: { data: { nombre: d.nombre, telefono: d.telefono, anio: d.anio, hijo_de: d.hijo_de, parentesco: d.parentesco, acepta_arbol: d.acepta_arbol } }
+      });
+      const yaExiste = (error && /registered|exists/i.test(error.message)) || (data && data.user && data.user.identities && data.user.identities.length === 0);
+      if (yaExiste) {
+        if (await entrarCon(d.correo, d.anio)) return;
+        return msg('Ese correo ya está registrado con otro año de nacimiento. Usa «Ya estoy registrado» con tu año.', 'error');
+      }
+      if (error) return msg('No se pudo registrar: ' + error.message, 'error');
+      if (!data.session) return msg('Tu registro quedó guardado, pero el archivo aún no permite el ingreso automático. Avisa a la administradora.', 'error');
+    } finally { bloquear(e.target, false); }
+  });
+
+  async function salir() { await sb.auth.signOut(); location.hash = '#/'; location.reload(); }
+  $('#salir').onclick = salir;
+
+  /* ===== Sesión y estado del miembro ===== */
+  let YO = null; // {nombre, es_admin, estado}
+  async function verificarMiembro(user) {
+    let { data: est, error } = await sb.rpc('mi_estado');
+    if (error) throw error;
+    if (est.estado === 'sin_solicitud') {
+      const m = user.user_metadata || {};
+      const r = await sb.rpc('solicitar_acceso', {
+        p_nombre: m.nombre || user.email.split('@')[0], p_telefono: m.telefono || null, p_anio: m.anio ? parseInt(m.anio, 10) : null,
+        p_parentesco: m.parentesco || null, p_hijo_de: m.hijo_de || null, p_acepta_arbol: m.acepta_arbol !== false
+      });
+      if (r.error) throw r.error;
+      est = r.data;
+    }
+    return est;
+  }
+
+  let arrancado = false;
+  async function iniciar() {
+    // Enlaces de aprobación del correo semanal: funcionan sin iniciar sesión
+    const rev = location.hash.match(/^#\/revisar\/([0-9a-f]{40,})\/(si|no)$/);
+    if (rev) return revisarPorEnlace(rev[1], rev[2] === 'si');
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { mostrar('p-acceso'); return; }
+    let est;
+    try { est = await conTiempo(verificarMiembro(session.user), 15000); }
+    catch (e) { console.warn(e); return aviso('<p>No pudimos conectar con el archivo en este momento. Inténtalo de nuevo en unos minutos.</p>', 'Reintentar', () => location.reload()); }
+    if (est.estado === 'pendiente') return aviso(`<p><b>Gracias, ${esc(est.nombre)}.</b></p><p>Tu registro está guardado. En breve podrás ver el archivo.</p>`);
+    if (est.estado === 'rechazado') return aviso('<p>Tu acceso al archivo fue desactivado. Si crees que es un error, escribe a la administradora del archivo.</p>');
+    YO = est;
+    $('#p-acceso').hidden = true; $('#p-aviso').hidden = true;
+    $('#cabecera').hidden = false; $('#pie').hidden = false;
+    $('#quien').textContent = est.nombre;
+    $('#nav-admin').hidden = !est.es_admin;
+    if (!arrancado) { arrancado = true; await cargar(); }
+    router();
+  }
+
+  sb.auth.onAuthStateChange((evento) => {
+    if (evento === 'SIGNED_IN' && !YO) setTimeout(iniciar, 0);
+  });
+
+  async function revisarPorEnlace(token, aprobar) {
+    aviso('<p>Procesando...</p>', 'Ir al archivo', () => { location.hash = '#/'; location.reload(); });
+    const { data, error } = await sb.rpc('revisar_por_token', { p_token: token, p_aprobar: aprobar });
+    if (error || !data || !data.ok) return aviso('<p>Este enlace no es válido o ya no funciona.</p>', 'Ir al archivo', () => { location.hash = '#/'; location.reload(); });
+    const txt = data.estado === 'aprobado'
+      ? `<p><b>${esc(data.nombre)}</b> puede ver el archivo otra vez.</p>`
+      : `<p><b>${esc(data.nombre)}</b> ya no tiene acceso al archivo.</p><p style="color:var(--muted);font-size:.85rem">Si fue un error, puedes devolverle el acceso desde Administrar.</p>`;
+    aviso(txt, 'Ir al archivo', () => { location.hash = '#/'; location.reload(); });
+  }
+
+  /* ===== Fotos privadas: enlaces firmados ===== */
+  const firmas = new Map();
+  async function firmar(paths) {
+    const ahora = Date.now();
+    const faltan = [...new Set(paths)].filter(p => !(firmas.has(p) && firmas.get(p).exp > ahora + 60000));
+    for (let i = 0; i < faltan.length; i += 150) {
+      const lote = faltan.slice(i, i + 150);
+      const { data, error } = await almacen().createSignedUrls(lote, 6 * 3600);
+      if (error) { console.warn(error); continue; }
+      data.forEach(d => { if (d.signedUrl) firmas.set(d.path, { url: d.signedUrl, exp: ahora + 6 * 3600 * 1000 }); });
+    }
+  }
+  const url = p => (firmas.get(p) || {}).url || '';
+  async function hidratar(raiz = document) {
+    const imgs = [...raiz.querySelectorAll('img[data-p]')], links = [...raiz.querySelectorAll('a[data-full]')];
+    await firmar(imgs.map(i => i.dataset.p).concat(links.map(a => a.dataset.full)));
+    imgs.forEach(i => { if (url(i.dataset.p)) i.src = url(i.dataset.p); });
+    links.forEach(a => { if (url(a.dataset.full)) { a.href = url(a.dataset.full); a.dataset.downloadSrc = url(a.dataset.full); } });
+  }
+
+  /* ===== Datos ===== */
+  let DATA = null, FOTOS = [];
+  const ruta = (a, f, mini) => (mini ? 'mini/' : 'fotos/') + a.id + '/' + f.archivo;
+  const decadaDe = anio => { const m = String(anio || '').match(/(1[89]\d|20\d)\d/); return m ? m[1] + '0s' : ''; };
+  function decadasAlbum(a) {
+    const ds = new Set(a.fotos.map(f => decadaDe(f.anio)).filter(Boolean));
+    const m = (a.anios || '').match(/19\d\d/g) || [];
+    if (m.length === 2) for (let y = +m[0]; y <= +m[1]; y += 10) ds.add(decadaDe(y)); else m.forEach(y => ds.add(decadaDe(y)));
+    return ds;
+  }
+  async function cargar() {
+    const { data, error } = await almacen().download('datos/albums.json');
+    if (error || !data) { DATA = null; return; }
+    DATA = JSON.parse(await data.text());
+    FOTOS = [];
+    DATA.albumes.forEach(a => {
+      a.decadas = decadasAlbum(a);
+      a.fotos.forEach((f, i) => {
+        f.album = a; f.n = i + 1; f.decada = decadaDe(f.anio);
+        f.texto = norm([a.titulo, f.anio, f.lugar, (f.personas || []).join(' '), f.historia].join(' '));
+        FOTOS.push(f);
+      });
+    });
+  }
+
+  /* ===== Vistas del archivo ===== */
+  function pie(f) {
+    const a = f.album;
+    const h = `<div class="h">${esc(f.historia || a.titulo)}</div>`;
+    const d = [f.personas && f.personas.length ? 'En la foto: ' + f.personas.join(', ') : '', [f.lugar, f.anio].filter(Boolean).join(' · '), `${a.titulo} · foto ${String(f.n).padStart(3, '0')} de ${a.fotos.length}`].filter(Boolean);
+    return `<div class="pie">${h}<div class="d">${d.map(esc).join('<br>')}</div></div>`;
+  }
+  function tarjetaFoto(f, grupo) {
+    return `<a class="foto" href="#" data-full="${esc(ruta(f.album, f))}" data-fancybox="${esc(grupo)}" data-caption="${esc(pie(f))}">
+      <img data-p="${esc(ruta(f.album, f, true))}" alt="${esc(f.historia || f.album.titulo + ' ' + f.n)}" loading="lazy" decoding="async">
+      ${f.historia ? '<span class="marca">Historia</span>' : ''}</a>`;
+  }
+  function chipsDecadas(activa) {
+    const ds = [...new Set(DATA.albumes.flatMap(a => [...a.decadas]))].sort();
+    return `<div class="chips"><span class="etq">Década</span><button class="chip ${!activa ? 'on' : ''}" data-dec="">Todas</button>
+      ${ds.map(d => `<button class="chip ${d === activa ? 'on' : ''}" data-dec="${d}">${d}</button>`).join('')}</div>`;
+  }
+  function sinDatos() {
+    $('#vista').innerHTML = YO && YO.es_admin
+      ? '<h1 class="hero chico">Falta subir las fotos</h1><p class="vacio">Las fotos todavía no están en el almacenamiento privado. Ve a <a href="#/admin">Administrar › Subir fotos</a>.</p>'
+      : '<p class="vacio">El archivo se está preparando. Vuelve a entrar en un rato.</p>';
+  }
+
+  function vistaInicio(q) {
+    const dec = q.get('decada') || '';
+    const albs = DATA.albumes.filter(a => !dec || a.decadas.has(dec));
+    const personas = new Set(FOTOS.flatMap(f => f.personas || [])).size;
+    $('#vista').innerHTML = `
+      <h1 class="hero">Archivo Fotográfico<br>Familiar</h1>
+      <p class="lead">Las fotos de la familia ${esc(CONFIG.familia)}. Abre un álbum, busca a alguien, lee las historias detrás de cada foto o recorre el árbol familiar.</p>
+      <div class="stats">
+        <div class="stat"><b>${DATA.albumes.length}</b><span>álbumes</span></div>
+        <div class="stat"><b>${FOTOS.length}</b><span>fotografías</span></div>
+        <div class="stat"><b>${FOTOS.filter(f => f.historia).length}</b><span>historias</span></div>
+        <div class="stat"><b>${personas}</b><span>personas identificadas</span></div>
+      </div>
+      <form class="buscador" id="f-buscar"><input type="search" id="q" placeholder="Busca una persona, un lugar o un año (ej.: Rosa Luz, Arequipa, 1971)"></form>
+      ${chipsDecadas(dec)}
+      <div class="grid">${albs.map(a => {
+        const i = DATA.albumes.indexOf(a), p = a.fotos.find(f => f.archivo === a.portada) || a.fotos[0];
+        return `<a class="album" href="#/album/${encodeURIComponent(a.id)}"><div class="marco"><img data-p="${esc(ruta(a, p, true))}" alt="${esc(a.titulo)}" loading="lazy"></div>
+          <div class="meta"><div class="num">${String(i + 1).padStart(2, '0')}.</div><div><h3>${esc(a.titulo)}</h3><p>${a.fotos.length} fotografías${a.fotos.some(f => f.historia) ? ' · ' + a.fotos.filter(f => f.historia).length + ' con historia' : ''}</p></div></div></a>`;
+      }).join('') || '<p class="vacio">No hay álbumes de esa década.</p>'}</div>`;
+    $('#f-buscar').onsubmit = e => { e.preventDefault(); location.hash = '#/buscar?q=' + encodeURIComponent($('#q').value.trim()); };
+    document.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => { location.hash = b.dataset.dec ? '#/?decada=' + b.dataset.dec : '#/'; });
+  }
+
+  function vistaAlbum(id) {
+    const a = DATA.albumes.find(x => x.id === id);
+    if (!a) return vistaInicio(new URLSearchParams());
+    const sig = DATA.albumes[(DATA.albumes.indexOf(a) + 1) % DATA.albumes.length];
+    $('#vista').innerHTML = `<a class="volver" href="#/">← Todos los álbumes</a>
+      <h1 class="hero chico">${esc(a.titulo)}</h1>
+      <p class="lead">${a.fotos.length} fotografías. Toca una foto para verla en grande; puedes pasar con las flechas o deslizando.</p>
+      <div class="fotos">${a.fotos.map(f => tarjetaFoto(f, 'album-' + a.id)).join('')}</div>
+      <p style="padding-bottom:80px"><a class="volver" href="#/album/${encodeURIComponent(sig.id)}">Siguiente álbum: ${esc(sig.titulo)} →</a></p>`;
+  }
+
+  function vistaHistorias() {
+    const hs = FOTOS.filter(f => f.historia).sort((x, y) => (parseInt(x.anio) || 9999) - (parseInt(y.anio) || 9999));
+    let html = '', dec = null;
+    hs.forEach(f => {
+      const d = f.decada || 'Sin fecha';
+      if (d !== dec) { dec = d; html += `<h2 class="decada">${d === 'Sin fecha' ? 'Sin fecha' : 'Años ' + d.slice(2)}</h2>`; }
+      html += `<article class="historia"><a class="marco" href="#" data-full="${esc(ruta(f.album, f))}" data-fancybox="historias" data-caption="${esc(pie(f))}"><img data-p="${esc(ruta(f.album, f, true))}" alt="" loading="lazy"></a>
+        <div class="txt"><div class="cuando">${esc([f.anio, f.lugar].filter(Boolean).join(' · ') || f.album.titulo)}</div><p>${esc(f.historia)}</p>
+        ${f.personas && f.personas.length ? `<div class="quien">En la foto: ${f.personas.map(p => `<button type="button" data-persona="${esc(p)}">${esc(p)}</button>`).join(', ')}</div>` : ''}</div></article>`;
+    });
+    $('#vista').innerHTML = `<h1 class="hero chico">Historias</h1><p class="lead">Las fotos que ya tienen su relato, ordenadas en el tiempo. Toca un nombre para ver todas sus fotos.</p><div class="historias">${html}</div>`;
+    document.querySelectorAll('[data-persona]').forEach(b => b.onclick = () => { location.hash = '#/buscar?q=' + encodeURIComponent(b.dataset.persona); });
+  }
+
+  function vistaBuscar(q) {
+    const texto = q.get('q') || '', dec = q.get('decada') || '';
+    const palabras = norm(texto).split(/\s+/).filter(w => w && w !== 'de');
+    const res = (palabras.length || dec) ? FOTOS.filter(f => palabras.every(p => f.texto.includes(p)) && (!dec || f.decada === dec || (!f.decada && f.album.decadas.has(dec)))) : [];
+    const cuenta = new Map(); FOTOS.forEach(f => (f.personas || []).forEach(p => cuenta.set(p, (cuenta.get(p) || 0) + 1)));
+    const top = [...cuenta].sort((a, b) => b[1] - a[1]).slice(0, 14).map(x => x[0]);
+    $('#vista').innerHTML = `<h1 class="hero chico">Buscar</h1>
+      <form class="buscador" id="f-buscar"><input type="search" id="q" value="${esc(texto)}" placeholder="Persona, lugar, año o palabra de la historia"></form>
+      <div class="chips"><span class="etq">Personas</span>${top.map(p => `<button class="chip ${norm(p) === norm(texto) ? 'on' : ''}" data-q="${esc(p)}">${esc(p)}</button>`).join('')}</div>
+      ${chipsDecadas(dec)}
+      ${(palabras.length || dec)
+        ? (res.length ? `<p class="lead">${res.length} foto${res.length === 1 ? '' : 's'}.</p><div class="fotos">${res.map(f => tarjetaFoto(f, 'busqueda')).join('')}</div>`
+                      : `<p class="vacio">No encontramos fotos con «${esc(texto)}». Muchas fotos aún no tienen nombres ni historia: si reconoces a alguien, cuéntanoslo.</p>`)
+        : '<p class="vacio">Escribe un nombre, un lugar o un año, o elige una persona o una década.</p>'}`;
+    const ir = (t, d) => { const p = new URLSearchParams(); if (t) p.set('q', t); if (d) p.set('decada', d); location.hash = '#/buscar?' + p; };
+    $('#f-buscar').onsubmit = e => { e.preventDefault(); ir($('#q').value.trim(), dec); };
+    document.querySelectorAll('[data-q]').forEach(b => b.onclick = () => ir(b.dataset.q, dec));
+    document.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => ir(texto, b.dataset.dec));
+  }
+
+  /* ===== Árbol genealógico ===== */
+  async function leerArbol() {
+    const [p, r] = await Promise.all([sb.from('personas').select('*').order('anio_nacimiento', { nullsFirst: false }).order('creado'), sb.from('parejas').select('*')]);
+    if (p.error || r.error) throw (p.error || r.error);
+    return { personas: p.data, parejas: r.data };
+  }
+  function nombreBusqueda(n) { return n.replace(/\s+de\s+.*$/i, ''); }
+  async function vistaArbol() {
+    $('#vista').innerHTML = '<h1 class="hero chico">Árbol familiar</h1><p class="lead">Cargando...</p>';
+    let A; try { A = await leerArbol(); } catch (e) { $('#vista').innerHTML = '<p class="vacio">No se pudo cargar el árbol.</p>'; return; }
+    const P = new Map(A.personas.map(p => [p.id, p]));
+    const parejasDe = p => { const id = p && p.id ? p.id : p; return A.parejas.filter(x => x.persona_a === id || x.persona_b === id).map(x => P.get(x.persona_a === id ? x.persona_b : x.persona_a)).filter(Boolean); };
+    const tienePadres = p => !!(p && (p.padre_id && P.has(p.padre_id) || p.madre_id && P.has(p.madre_id)));
+    const hijosDe = ids => A.personas.filter(h => ids.includes(h.padre_id) || ids.includes(h.madre_id));
+    const hechas = new Map();
+    const tarjeta = (p) => {
+      const anios = p.fallecido ? [p.anio_nacimiento, p.anio_fallecimiento ? '† ' + p.anio_fallecimiento : '†'].filter(Boolean).join(' – ') : '';
+      return `<button class="persona ${p.por_confirmar ? 'confirmar' : ''}" data-buscar="${esc(nombreBusqueda(p.nombre))}" title="${p.por_confirmar ? 'Datos por confirmar · ' : ''}Ver sus fotos">${esc(p.nombre)}${anios ? `<small>${esc(anios)}</small>` : ''}</button>`;
+    };
+    const raizDe = new Map();
+    function familia(p, raiz) {
+      const pars = parejasDe(p);
+      const clave = [p.id, ...pars.map(x => x.id)].sort().join('|');
+      const cab = `<span class="familia">${tarjeta(p)}${pars.map(x => `<span class="y">y</span>${tarjeta(x)}`).join('')}</span>`;
+      if (hechas.has(clave)) return `<li>${cab} <span class="ref">→ su familia aparece en la rama de ${esc(hechas.get(clave))}</span></li>`;
+      hechas.set(clave, raiz);
+      const hijos = hijosDe([p.id, ...pars.map(x => x.id)]);
+      return `<li>${cab}${hijos.length ? `<ul>${hijos.map(h => familia(h, raiz)).join('')}</ul>` : ''}</li>`;
+    }
+    const contar = (p, vistos = new Set()) => { if (vistos.has(p.id)) return 0; vistos.add(p.id); return 1 + hijosDe([p.id, ...parejasDe(p).map(x => x.id)]).reduce((n, h) => n + contar(h, vistos), 0); };
+    const raices = A.personas.filter(p => !tienePadres(p) && !parejasDe(p).some(tienePadres));
+    const usadas = new Set(), ramas = [];
+    raices.sort((a, b) => contar(b) - contar(a)).forEach(r => {
+      if (usadas.has(r.id)) return;
+      usadas.add(r.id); parejasDe(r).forEach(x => usadas.add(x.id));
+      ramas.push(familia(r, r.nombre));
+    });
+    const sinUbicar = A.personas.filter(p => ![...hechas.keys()].some(k => k.split('|').includes(p.id)));
+    $('#vista').innerHTML = `<h1 class="hero chico">Árbol familiar</h1>
+      <p class="lead">${A.personas.length} personas. Toca un nombre para ver sus fotos. Los recuadros con borde punteado tienen datos por confirmar: si sabes algo, cuéntaselo a la administradora del archivo.</p>
+      <div class="arbol-caja"><ul class="arbol">${ramas.join('')}</ul>
+      ${sinUbicar.length ? `<h3 style="margin-top:40px;font-weight:500">Aún sin ubicar en el árbol</h3><div class="familia">${sinUbicar.map(tarjeta).join('')}</div>` : ''}</div>`;
+    document.querySelectorAll('[data-buscar]').forEach(b => b.onclick = () => { location.hash = '#/buscar?q=' + encodeURIComponent(b.dataset.buscar); });
+  }
+
+  /* ===== Administrar ===== */
+  async function vistaAdmin() {
+    if (!YO || !YO.es_admin) { location.hash = '#/'; return; }
+    $('#vista').innerHTML = `<h1 class="hero chico">Administrar</h1>
+      <div class="panel"><h2>Familiares registrados</h2><div id="adm-miembros">Cargando...</div></div>
+      <div class="panel"><h2>Árbol familiar</h2><p style="font-size:.85rem;color:var(--muted)">Añade personas, corrige nombres y enlaza padres, madres y parejas. Desmarca «por confirmar» cuando un dato esté verificado.</p><div id="adm-arbol">Cargando...</div></div>
+      <div class="panel"><h2>Subir fotos</h2>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.5">Elige la carpeta del archivo en tu computadora (la que tiene <b>albums.json</b> y las carpetas <b>fotos</b> y <b>mini</b>). Solo se suben las fotos nuevas o cambiadas; las que ya están no se repiten.</p>
+        <input type="file" id="adm-carpeta" webkitdirectory directory multiple>
+        <div class="progreso"><div id="adm-barra"></div></div><p id="adm-subida" style="font-size:.85rem"></p></div>`;
+    pintarMiembros(); pintarArbolAdmin();
+    $('#adm-carpeta').onchange = e => subirCarpeta([...e.target.files]);
+  }
+
+  async function pintarMiembros() {
+    const { data, error } = await sb.from('miembros').select('*').order('creado', { ascending: false });
+    if (error) { $('#adm-miembros').textContent = 'No se pudo cargar.'; return; }
+    const orden = { pendiente: 0, aprobado: 1, rechazado: 2 };
+    data.sort((a, b) => orden[a.estado] - orden[b.estado]);
+    const pend = data.filter(m => m.estado === 'pendiente').length;
+    $('#adm-miembros').innerHTML = `<p style="font-size:.85rem">${data.filter(m => m.estado === 'aprobado').length} familiares con acceso${data.filter(m => m.estado === 'rechazado').length ? ', ' + data.filter(m => m.estado === 'rechazado').length + ' sin acceso' : ''}. Entran con su correo y su año de nacimiento.</p>
+      <div class="tabla-caja"><table class="tabla"><tr><th>Nombre</th><th>Parentesco / hijo de</th><th>Contacto</th><th>Año</th><th>Estado</th><th></th></tr>
+      ${data.map(m => `<tr><td>${esc(m.nombre)}${m.es_admin ? ' <small>(administra)</small>' : ''}</td><td>${esc(m.parentesco || '')}${m.hijo_de_texto ? '<br><small>hijo/a de ' + esc(m.hijo_de_texto) + '</small>' : ''}</td>
+        <td>${esc(m.correo)}<br><small>${esc(m.telefono || '')}</small></td><td>${esc(m.anio_nacimiento || '')}</td><td>${esc(m.estado)}</td>
+        <td>${m.es_admin ? '' : (m.estado !== 'aprobado' ? `<button class="mini-btn ok" data-rev="${m.user_id}" data-si="1">Devolver acceso</button>` : '') + (m.estado !== 'rechazado' ? `<button class="mini-btn bad" data-rev="${m.user_id}" data-si="0">${m.estado === 'aprobado' ? 'Quitar acceso' : 'Rechazar'}</button>` : '')}</td></tr>`).join('')}
+      </table></div>`;
+    document.querySelectorAll('[data-rev]').forEach(b => b.onclick = async () => {
+      b.disabled = true;
+      const { error } = await sb.rpc('admin_revisar', { p_user: b.dataset.rev, p_aprobar: b.dataset.si === '1' });
+      if (error) alert('No se pudo: ' + error.message);
+      pintarMiembros(); pintarArbolAdmin();
+    });
+  }
+
+  async function pintarArbolAdmin() {
+    let A; try { A = await leerArbol(); } catch (e) { $('#adm-arbol').textContent = 'No se pudo cargar.'; return; }
+    A.personas.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    const opciones = (sel, sexo) => '<option value="">—</option>' + A.personas.filter(p => !sexo || !p.sexo || p.sexo === sexo).map(p => `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('');
+    const parejasDe = id => A.parejas.filter(x => x.persona_a === id || x.persona_b === id).map(x => x.persona_a === id ? x.persona_b : x.persona_a);
+    const fila = p => `<form class="form-fila" data-id="${p ? p.id : ''}" style="border-bottom:1px solid var(--line);padding-bottom:8px">
+        <input name="nombre" placeholder="Nombre completo" value="${esc(p ? p.nombre : '')}" style="flex:2 1 220px">
+        <select name="sexo"><option value="">Sexo</option><option value="M" ${p && p.sexo === 'M' ? 'selected' : ''}>Hombre</option><option value="F" ${p && p.sexo === 'F' ? 'selected' : ''}>Mujer</option></select>
+        <input name="anio_nacimiento" type="number" placeholder="Nació" value="${p && p.anio_nacimiento || ''}" style="flex:0 1 90px">
+        <input name="anio_fallecimiento" type="number" placeholder="Falleció" value="${p && p.anio_fallecimiento || ''}" style="flex:0 1 90px">
+        <label style="font-size:.8rem;align-self:center"><input type="checkbox" name="fallecido" ${p && p.fallecido ? 'checked' : ''}> Fallecido/a</label>
+        <select name="padre_id" title="Padre">${opciones(p && p.padre_id, 'M').replace('—', 'Padre: —')}</select>
+        <select name="madre_id" title="Madre">${opciones(p && p.madre_id, 'F').replace('—', 'Madre: —')}</select>
+        <select name="pareja" title="Pareja">${opciones(p && parejasDe(p.id)[0]).replace('—', 'Pareja: —')}</select>
+        <label style="font-size:.8rem;align-self:center"><input type="checkbox" name="por_confirmar" ${!p || p.por_confirmar ? 'checked' : ''}> Por confirmar</label>
+        <button class="mini-btn ok" type="submit">${p ? 'Guardar' : 'Añadir persona'}</button>
+        ${p ? '<button class="mini-btn gris" type="button" data-borrar>Borrar</button>' : ''}</form>`;
+    $('#adm-arbol').innerHTML = fila(null) + A.personas.map(fila).join('');
+    document.querySelectorAll('#adm-arbol form').forEach(f => {
+      f.onsubmit = async e => {
+        e.preventDefault();
+        const g = n => f.elements[n];
+        const datos = {
+          nombre: g('nombre').value.trim(), sexo: g('sexo').value || null,
+          anio_nacimiento: parseInt(g('anio_nacimiento').value, 10) || null, anio_fallecimiento: parseInt(g('anio_fallecimiento').value, 10) || null,
+          fallecido: g('fallecido').checked || !!parseInt(g('anio_fallecimiento').value, 10), padre_id: g('padre_id').value || null,
+          madre_id: g('madre_id').value || null, por_confirmar: g('por_confirmar').checked
+        };
+        if (!datos.nombre) return alert('Falta el nombre.');
+        let id = f.dataset.id, r;
+        if (id) r = await sb.from('personas').update(datos).eq('id', id);
+        else { r = await sb.from('personas').insert(datos).select('id').single(); id = r.data && r.data.id; }
+        if (r.error) return alert('No se pudo guardar: ' + r.error.message);
+        const pareja = g('pareja').value, actuales = parejasDe(id);
+        if (pareja && !actuales.includes(pareja)) await sb.from('parejas').insert({ persona_a: id, persona_b: pareja });
+        if (!pareja && actuales.length) await sb.from('parejas').delete().or(`persona_a.eq.${id},persona_b.eq.${id}`);
+        pintarArbolAdmin();
+      };
+      const b = f.querySelector('[data-borrar]');
+      if (b) b.onclick = async () => { if (!confirm('¿Borrar a ' + f.elements.nombre.value + ' del árbol?')) return; const r = await sb.from('personas').delete().eq('id', f.dataset.id); if (r.error) alert(r.error.message); pintarArbolAdmin(); };
+    });
+  }
+
+  async function subirCarpeta(files) {
+    const info = $('#adm-subida'), barra = $('#adm-barra');
+    const tipos = { webp: 'image/webp', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', json: 'application/json' };
+    const plan = [];
+    let json = null;
+    for (const f of files) {
+      const partes = (f.webkitRelativePath || f.name).split('/');
+      const i = partes.findIndex(p => p === 'fotos' || p === 'mini');
+      if (i >= 0 && partes.length === i + 3) plan.push({ f, ruta: partes.slice(i).join('/') });
+      else if (partes[partes.length - 1] === 'albums.json' && partes.length <= 2) json = f;
+    }
+    if (!json || !plan.length) { info.textContent = 'Esa carpeta no parece la del archivo: debe tener albums.json y las carpetas fotos y mini.'; return; }
+    info.textContent = 'Revisando lo que ya está subido...';
+    const existentes = new Map();
+    const carpetas = [...new Set(plan.map(p => p.ruta.split('/').slice(0, 2).join('/')))];
+    for (const c of carpetas) {
+      const { data } = await almacen().list(c, { limit: 1000 });
+      (data || []).forEach(o => existentes.set(c + '/' + o.name, o.metadata && o.metadata.size));
+    }
+    const pendientes = plan.filter(p => existentes.get(p.ruta) !== p.f.size);
+    let hechas = 0, fallos = 0;
+    const total = pendientes.length;
+    info.textContent = total ? `Subiendo ${total} archivos...` : 'Las fotos ya estaban subidas.';
+    const cola = [...pendientes];
+    async function trabajador() {
+      while (cola.length) {
+        const p = cola.shift();
+        const ext = p.ruta.split('.').pop().toLowerCase();
+        const { error } = await almacen().upload(p.ruta, p.f, { upsert: true, contentType: tipos[ext] || 'application/octet-stream', cacheControl: '31536000' });
+        if (error) { fallos++; console.warn(p.ruta, error); }
+        hechas++; barra.style.width = (100 * hechas / Math.max(total, 1)) + '%';
+        info.textContent = `Subidos ${hechas} de ${total}${fallos ? ` (${fallos} con error)` : ''}...`;
+      }
+    }
+    await Promise.all(Array.from({ length: 4 }, trabajador));
+    const r = await almacen().upload('datos/albums.json', json, { upsert: true, contentType: 'application/json', cacheControl: '60' });
+    barra.style.width = '100%';
+    info.innerHTML = r.error ? 'Las fotos se subieron, pero falló albums.json: ' + esc(r.error.message)
+      : `Listo: ${hechas - fallos} archivos subidos${fallos ? `, ${fallos} con error (vuelve a elegir la carpeta para reintentarlos)` : ''}. <a href="#/" onclick="location.reload()">Ver el archivo</a>`;
+    await cargar();
+  }
+
+  /* ===== Navegación ===== */
+  async function router() {
+    if (!YO) return;
+    const h = location.hash.replace(/^#/, '') || '/';
+    const [rutaH, qs] = h.split('?');
+    const q = new URLSearchParams(qs || '');
+    const partes = rutaH.split('/').filter(Boolean);
+    const sec = partes[0] || 'inicio';
+    document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === (sec === 'album' ? 'inicio' : sec)));
+    window.scrollTo(0, 0);
+    if (sec === 'admin') return vistaAdmin();
+    if (sec === 'arbol') return vistaArbol();
+    if (!DATA) return sinDatos();
+    if (sec === 'album') vistaAlbum(decodeURIComponent(partes[1] || ''));
+    else if (sec === 'historias') vistaHistorias();
+    else if (sec === 'buscar') vistaBuscar(q);
+    else vistaInicio(q);
+    hidratar($('#vista'));
+  }
+  window.addEventListener('hashchange', () => { if (/^#\/revisar\//.test(location.hash)) iniciar(); else router(); });
+
+  Fancybox.bind('[data-fancybox]', {
+    Hash: false, Carousel: { infinite: false }, Images: { zoom: true }, Thumbs: { type: 'classic' },
+    Toolbar: { display: { left: ['infobar'], middle: [], right: ['slideshow', 'download', 'fullscreen', 'thumbs', 'close'] } },
+    l10n: { CLOSE: 'Cerrar', NEXT: 'Siguiente', PREV: 'Anterior', DOWNLOAD: 'Descargar', TOGGLE_SLIDESHOW: 'Presentación', TOGGLE_FULLSCREEN: 'Pantalla completa', TOGGLE_THUMBS: 'Miniaturas' }
+  });
+
+  iniciar();
+  </script>
+</body>
+</html>

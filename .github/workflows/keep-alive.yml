@@ -1,0 +1,43 @@
+name: Mantener Supabase Activo
+
+# Supabase (plan gratuito) pausa el proyecto tras 7 días sin actividad.
+# La galería ya no depende de Supabase (usa albums.json), pero el registro de familiares sí.
+# Este robot escribe un "latido" en la base de datos dos veces por semana.
+
+on:
+  schedule:
+    - cron: '17 9 * * 1,4'   # lunes y jueves, 09:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  latido:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Escribir latido en Supabase
+        env:
+          # Es la clave pública (anon), la misma que usa la web. Si se define el secret, se usa ese.
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xcGd2eHJxbnVsc2ttZXBtdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTkzNjQsImV4cCI6MjA5ODgzNTM2NH0.z2b41M54eZx7Xx4OONDfY9xjfuwSm6ov8TmKFUrLCPk' }}
+        run: |
+          curl -fsS --retry 4 --retry-delay 20 --retry-all-errors \
+            -X POST "https://mqpgvxrqnulskmepmuri.supabase.co/rest/v1/rpc/latido" \
+            -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" -d '{}' \
+          || { echo "::error::Supabase no responde. Probablemente está pausado: entra a supabase.com y pulsa 'Resume project'."; exit 1; }
+
+      # GitHub desactiva los robots programados si el repo pasa 60 días sin cambios.
+      # Si el último cambio tiene más de 45 días, se guarda un pequeño registro para mantenerlo vivo.
+      - uses: actions/checkout@v4
+      - name: Mantener el repositorio activo
+        run: |
+          ultimo=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - ultimo )) -gt $(( 45 * 86400 )) ]; then
+            date -u +%Y-%m-%dT%H:%M:%SZ > .github/latido.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/latido.txt
+            git commit -m "Latido automático"
+            git push
+          fi

@@ -1,0 +1,10 @@
+# Las fotos y los datos del archivo son privados: viven en el almacenamiento privado de Supabase,
+# se suben desde la web (Administrar › Subir fotos) y NUNCA se publican en GitHub.
+fotos/
+mini/
+albums.json
+*.tif
+*.jpg
+*.jpeg
+*.webp
+__pycache__/
