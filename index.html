@@ -125,6 +125,27 @@
     .progreso { height: 8px; background: var(--chip); border-radius: 99px; overflow: hidden; margin: 10px 0; }
     .progreso div { height: 100%; width: 0; background: var(--ok); transition: width .3s; }
 
+    /* ---------- Reconocer / ficha de persona ---------- */
+    .opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin: 2px 0 14px; font-size: .88rem; }
+    .opciones label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+    .modal textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; background: #fafafa; border-radius: 4px; font: inherit; font-size: .9rem; margin-bottom: 10px; resize: vertical; }
+    .btn-reconocer { margin-top: 10px; background: #fff; color: #111; border: 0; border-radius: 99px; padding: 8px 16px; font-size: .82rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .btn-reconocer:hover { background: #f1e6d8; }
+    .persona { display: inline-flex; align-items: center; gap: 8px; }
+    .persona .avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: #e2e2de; flex: none; }
+    .persona.rama { background: #f6efe6; border-color: var(--accent); }
+    .persona .tu { font-size: .65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); font-weight: 600; }
+    .ficha-familia { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin: 10px 0 36px; }
+    .ficha-familia h3 { font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 0 0 6px; font-weight: 500; }
+    .ficha-familia a { display: block; text-decoration: none; padding: 3px 0; font-size: .92rem; }
+    .ficha-familia a:hover { text-decoration: underline; }
+    .recuerdo { background: var(--paper); border-left: 3px solid var(--accent); padding: 12px 14px; margin-bottom: 10px; border-radius: 0 6px 6px 0; font-family: 'Playfair Display', serif; line-height: 1.5; }
+    .recuerdo small { display: block; font-family: 'Inter', sans-serif; color: var(--muted); font-size: .72rem; margin-top: 6px; }
+    .aporte { display: flex; gap: 14px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding: 12px 0; align-items: flex-start; }
+    .aporte img { width: 120px; height: 90px; object-fit: cover; border-radius: 4px; background: #eee; }
+    .aporte .txt { flex: 1 1 240px; font-size: .85rem; line-height: 1.5; }
+    .aporte select { padding: 7px; border: 1px solid #ddd; border-radius: 4px; font: inherit; font-size: .82rem; max-width: 100%; margin: 6px 0; }
+
     .vacio { color: var(--muted); padding: 40px 0 100px; line-height: 1.6; }
     footer { padding: 30px 5% 50px; font-size: .75rem; color: var(--muted); border-top: 1px solid var(--line); }
     .pie { max-width: 720px; margin: 0 auto; text-align: left; line-height: 1.5; }
@@ -182,6 +203,33 @@
       <p class="sub">Archivo Fotográfico Familiar</p>
       <div id="aviso-texto" style="line-height:1.6;font-size:.95rem"></div>
       <button class="btn" id="aviso-btn" type="button" style="margin-top:20px">Salir</button>
+    </div>
+  </div>
+
+  <!-- ====== ¿Reconoces a alguien en esta foto? ====== -->
+  <div class="pantalla" id="p-reconocer" hidden style="z-index:100000">
+    <div class="modal" style="text-align:left">
+      <h1 style="font-size:1.6rem">¿Quién está en esta foto?</h1>
+      <img id="r-foto" alt="" style="width:100%;max-height:260px;object-fit:contain;background:#eee;border-radius:4px;margin:10px 0 14px">
+      <form id="f-reconocer" novalidate>
+        <label class="campo">Es…</label>
+        <div class="opciones">
+          <label><input type="radio" name="rel" value="yo"> Soy yo</label>
+          <label><input type="radio" name="rel" value="padre"> Mi papá</label>
+          <label><input type="radio" name="rel" value="madre"> Mi mamá</label>
+          <label><input type="radio" name="rel" value="hijo"> Mi hijo o hija</label>
+          <label><input type="radio" name="rel" value="pareja"> Mi esposo/a o pareja</label>
+          <label><input type="radio" name="rel" value="otro" checked> Otra persona</label>
+        </div>
+        <label class="campo" for="r-nombre">Su nombre completo</label>
+        <input type="text" id="r-nombre" list="lista-personas" placeholder="Escribe o elige un nombre" autocomplete="off">
+        <datalist id="lista-personas"></datalist>
+        <label class="campo" for="r-nota">¿Dónde está en la foto? ¿Algún recuerdo? (opcional)</label>
+        <textarea id="r-nota" rows="3" placeholder="Ej.: el de sombrero, a la izquierda. Fue en el matrimonio de mi tía."></textarea>
+        <button class="btn" type="submit">Guardar</button>
+        <button class="enlace" type="button" id="r-cancelar" style="display:block;margin:12px auto 0">Cancelar</button>
+      </form>
+      <p class="msg" id="r-msg"></p>
     </div>
   </div>
 
@@ -297,7 +345,8 @@
     if (est.estado === 'sin_solicitud') {
       const m = user.user_metadata || {};
       const r = await sb.rpc('solicitar_acceso', {
-        p_nombre: m.nombre || user.email.split('@')[0], p_telefono: m.telefono || null, p_anio: m.anio ? parseInt(m.anio, 10) : null,
+        // sin nombre (entró con «Ya estoy registrado» del formulario anterior): Supabase usa el nombre de ese registro
+        p_nombre: m.nombre || null, p_telefono: m.telefono || null, p_anio: m.anio ? parseInt(m.anio, 10) : null,
         p_parentesco: m.parentesco || null, p_hijo_de: m.hijo_de || null, p_acepta_arbol: m.acepta_arbol !== false
       });
       if (r.error) throw r.error;
@@ -381,18 +430,98 @@
       a.decadas = decadasAlbum(a);
       a.fotos.forEach((f, i) => {
         f.album = a; f.n = i + 1; f.decada = decadaDe(f.anio);
-        f.texto = norm([a.titulo, f.anio, f.lugar, (f.personas || []).join(' '), f.historia].join(' '));
         FOTOS.push(f);
+        FOTO_POR_CLAVE.set(claveFoto(f), f);
       });
     });
+    try { await obtenerArbol(); } catch (e) { console.warn(e); }
+    await cargarEtiquetas();
   }
+
+  /* ===== Lo que la familia reconoce en las fotos ===== */
+  let ETIQUETAS = [], ETQ = new Map(), ARBOL = null;
+  const FOTO_POR_CLAVE = new Map();
+  const claveFoto = f => f.album.id + '/' + f.archivo;
+  const nombreEtq = e => e.nombre_texto || ((ARBOL && ARBOL.P.get(e.persona_id)) || {}).nombre || '';
+  async function obtenerArbol(forzar) {
+    if (!ARBOL || forzar) { const A = await leerArbol(); A.P = new Map(A.personas.map(p => [p.id, p])); ARBOL = A; }
+    return ARBOL;
+  }
+  async function cargarEtiquetas() {
+    const { data } = await sb.from('etiquetas').select('*').order('creado');
+    ETIQUETAS = data || []; ETQ = new Map();
+    ETIQUETAS.forEach(e => { if (!ETQ.has(e.foto)) ETQ.set(e.foto, []); ETQ.get(e.foto).push(e); });
+    FOTOS.forEach(f => {
+      f.texto = norm([f.album.titulo, f.anio, f.lugar, (f.personas || []).join(' '), f.historia,
+        (ETQ.get(claveFoto(f)) || []).map(e => nombreEtq(e) + ' ' + (e.nota || '')).join(' ')].join(' '));
+    });
+  }
+  // Compara nombres escritos de formas distintas ("Rosa Luz Rivera" = "Rosa Luz Rivera de Piscoya")
+  const palabrasNombre = s => norm(s).replace(/\s+de\s+.*$/, '').split(/[\s,.]+/).filter(w => w && w !== 'y');
+  function mismoNombre(a, b) {
+    const A = palabrasNombre(a), B = palabrasNombre(b);
+    if (!A.length || !B.length) return false;
+    const [c, l] = A.length <= B.length ? [A, B] : [B, A];
+    return c.every(w => l.includes(w)) && (c.length === l.length || c.length >= 3);
+  }
+  function fotosDe(p) {
+    return FOTOS.filter(f => (ETQ.get(claveFoto(f)) || []).some(e => e.persona_id === p.id || (!e.persona_id && e.nombre_texto && mismoNombre(e.nombre_texto, p.nombre)))
+      || (f.personas || []).some(n => mismoNombre(n, p.nombre)));
+  }
+  const RELACION = { yo: 'Soy yo', padre: 'Mi papá', madre: 'Mi mamá', hijo: 'Mi hijo o hija', pareja: 'Mi esposo/a o pareja', otro: 'Otra persona' };
+
+  function abrirReconocer(clave) {
+    const f = FOTO_POR_CLAVE.get(clave); if (!f) return;
+    try { Fancybox.close(); } catch (e) {}
+    const caja = $('#p-reconocer');
+    caja.dataset.foto = clave;
+    $('#r-foto').removeAttribute('src'); $('#r-foto').dataset.p = ruta(f.album, f, true);
+    hidratar(caja);
+    $('#lista-personas').innerHTML = ARBOL ? ARBOL.personas.map(p => `<option value="${esc(p.nombre)}">`).join('') : '';
+    $('#f-reconocer').reset(); $('#r-msg').textContent = '';
+    caja.hidden = false;
+  }
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('.btn-reconocer');
+    if (b) { e.preventDefault(); e.stopPropagation(); abrirReconocer(b.dataset.foto); return; }
+    // Si se toca una foto antes de que termine de cargar su enlace privado, se espera y se abre
+    const a = e.target.closest('a[data-full]');
+    if (a && a.getAttribute('href') === '#') {
+      e.preventDefault(); e.stopPropagation();
+      await hidratar(a.closest('.fotos, .historias, #vista') || document);
+      if (a.getAttribute('href') !== '#') a.click();
+    }
+  }, true);
+  $('#r-cancelar').onclick = () => { $('#p-reconocer').hidden = true; };
+  document.querySelectorAll('#f-reconocer input[name=rel]').forEach(r => r.onchange = () => {
+    if (r.checked && r.value === 'yo' && YO && !$('#r-nombre').value) $('#r-nombre').value = YO.nombre;
+  });
+  $('#f-reconocer').addEventListener('submit', async e => {
+    e.preventDefault();
+    const rel = (document.querySelector('#f-reconocer input[name=rel]:checked') || {}).value || 'otro';
+    const nombre = $('#r-nombre').value.trim(), nota = $('#r-nota').value.trim();
+    const rmsg = (t, c) => { $('#r-msg').textContent = t; $('#r-msg').style.color = c || 'var(--info)'; };
+    if (!nombre) return rmsg('Escribe el nombre de la persona.', 'var(--bad)');
+    const exacta = ARBOL ? ARBOL.personas.filter(p => norm(p.nombre) === norm(nombre)) : [];
+    rmsg('Guardando...');
+    const { data, error } = await sb.rpc('aportar', {
+      p_foto: $('#p-reconocer').dataset.foto, p_persona: exacta.length === 1 ? exacta[0].id : null,
+      p_nombre: nombre, p_relacion: rel, p_nota: nota || null
+    });
+    if (error || !data || !data.ok) return rmsg('No se pudo guardar. Inténtalo de nuevo.', 'var(--bad)');
+    await cargarEtiquetas();
+    rmsg(rel === 'otro' ? '¡Gracias! Ya aparece en la foto.' : '¡Gracias! Ya aparece en la foto. Miguel revisará el parentesco para añadirlo al árbol familiar.', 'var(--ok)');
+    setTimeout(() => { $('#p-reconocer').hidden = true; router(); }, 1800);
+  });
 
   /* ===== Vistas del archivo ===== */
   function pie(f) {
     const a = f.album;
     const h = `<div class="h">${esc(f.historia || a.titulo)}</div>`;
-    const d = [f.personas && f.personas.length ? 'En la foto: ' + f.personas.join(', ') : '', [f.lugar, f.anio].filter(Boolean).join(' · '), `${a.titulo} · foto ${String(f.n).padStart(3, '0')} de ${a.fotos.length}`].filter(Boolean);
-    return `<div class="pie">${h}<div class="d">${d.map(esc).join('<br>')}</div></div>`;
+    const etq = (ETQ.get(claveFoto(f)) || []).filter(e => !e.oculta);
+    const rec = etq.length ? 'Reconocidos por la familia: ' + etq.map(e => nombreEtq(e) + (e.nota ? ` (${e.nota})` : '') + (e.autor_nombre ? ` — según ${e.autor_nombre}` : '')).join(' · ') : '';
+    const d = [f.personas && f.personas.length ? 'En la foto: ' + f.personas.join(', ') : '', rec, [f.lugar, f.anio].filter(Boolean).join(' · '), `${a.titulo} · foto ${String(f.n).padStart(3, '0')} de ${a.fotos.length}`].filter(Boolean);
+    return `<div class="pie">${h}<div class="d">${d.map(esc).join('<br>')}</div><button type="button" class="btn-reconocer" data-foto="${esc(claveFoto(f))}">¿Reconoces a alguien en esta foto?</button></div>`;
   }
   function tarjetaFoto(f, grupo) {
     return `<a class="foto" href="#" data-full="${esc(ruta(f.album, f))}" data-fancybox="${esc(grupo)}" data-caption="${esc(pie(f))}">
@@ -486,17 +615,60 @@
     return { personas: p.data, parejas: r.data };
   }
   function nombreBusqueda(n) { return n.replace(/\s+de\s+.*$/i, ''); }
+  const aniosDe = p => p.fallecido ? [p.anio_nacimiento, p.anio_fallecimiento ? '† ' + p.anio_fallecimiento : '†'].filter(Boolean).join(' – ') : '';
+  function parientes(A, p) {
+    const pid = x => x && x.id ? x.id : x;
+    const parejas = A.parejas.filter(x => x.persona_a === p.id || x.persona_b === p.id).map(x => A.P.get(x.persona_a === p.id ? x.persona_b : x.persona_a)).filter(Boolean);
+    const hijos = A.personas.filter(h => h.padre_id === p.id || h.madre_id === p.id);
+    const hermanos = A.personas.filter(h => h.id !== p.id && ((p.padre_id && h.padre_id === p.padre_id) || (p.madre_id && h.madre_id === p.madre_id)));
+    return { padre: A.P.get(p.padre_id), madre: A.P.get(p.madre_id), parejas, hijos, hermanos };
+  }
+
+  async function vistaPersona(id) {
+    let A; try { A = await obtenerArbol(true); } catch (e) { $('#vista').innerHTML = '<p class="vacio">No se pudo cargar.</p>'; return; }
+    const p = A.P.get(id);
+    if (!p) { $('#vista').innerHTML = '<p class="vacio">Esta persona ya no está en el árbol. <a href="#/arbol">Volver al árbol</a></p>'; return; }
+    const r = parientes(A, p);
+    const enlace = x => `<a href="#/persona/${x.id}">${esc(x.nombre)}</a>`;
+    const grupo = (titulo, lista) => lista.length ? `<div><h3>${titulo}</h3>${lista.map(enlace).join('')}</div>` : '';
+    const fotos = fotosDe(p);
+    const recuerdos = ETIQUETAS.filter(e => e.nota && (e.persona_id === p.id || (!e.persona_id && e.nombre_texto && mismoNombre(e.nombre_texto, p.nombre))));
+    const historias = fotos.filter(f => f.historia);
+    $('#vista').innerHTML = `<a class="volver" href="#/arbol">← Árbol familiar</a>
+      <h1 class="hero chico">${esc(p.nombre)}</h1>
+      <p class="lead">${[aniosDe(p), p.por_confirmar ? 'Datos por confirmar: si sabes algo de esta persona, cuéntaselo a la familia.' : '', p.notas].filter(Boolean).map(esc).join('<br>')}</p>
+      <div class="ficha-familia">
+        ${grupo('Padres', [r.padre, r.madre].filter(Boolean))}${grupo(r.parejas.length > 1 ? 'Parejas' : 'Pareja', r.parejas)}
+        ${grupo('Hijos', r.hijos)}${grupo('Hermanos', r.hermanos)}
+      </div>
+      <h2 class="decada" style="margin-top:0">${fotos.length ? `Aparece en ${fotos.length} foto${fotos.length === 1 ? '' : 's'}` : 'Aún no la reconocimos en ninguna foto'}</h2>
+      <p style="color:var(--muted);font-size:.85rem;margin:18px 0">${fotos.length ? 'Toca una foto para verla en grande.' : 'Si la reconoces en alguna foto, ábrela y pulsa «¿Reconoces a alguien en esta foto?».'}</p>
+      ${fotos.length ? `<div class="fotos" style="padding-bottom:30px">${fotos.map(f => tarjetaFoto(f, 'persona')).join('')}</div>` : ''}
+      ${recuerdos.length || historias.length ? `<h2 class="decada" style="margin-top:0">Recuerdos</h2><div style="margin:18px 0 80px;max-width:720px">
+        ${historias.map(f => `<div class="recuerdo">${esc(f.historia)}<small>${esc([f.anio, f.lugar, f.album.titulo].filter(Boolean).join(' · '))}</small></div>`).join('')}
+        ${recuerdos.map(e => `<div class="recuerdo">${esc(e.nota)}<small>Contado por ${esc(e.autor_nombre || 'un familiar')} · ${new Date(e.creado).toLocaleDateString('es')}</small></div>`).join('')}
+      </div>` : '<div style="height:60px"></div>'}`;
+    hidratar($('#vista'));
+  }
+
   async function vistaArbol() {
     $('#vista').innerHTML = '<h1 class="hero chico">Árbol familiar</h1><p class="lead">Cargando...</p>';
-    let A; try { A = await leerArbol(); } catch (e) { $('#vista').innerHTML = '<p class="vacio">No se pudo cargar el árbol.</p>'; return; }
-    const P = new Map(A.personas.map(p => [p.id, p]));
+    let A; try { A = await obtenerArbol(true); } catch (e) { $('#vista').innerHTML = '<p class="vacio">No se pudo cargar el árbol.</p>'; return; }
+    const P = A.P;
     const parejasDe = p => { const id = p && p.id ? p.id : p; return A.parejas.filter(x => x.persona_a === id || x.persona_b === id).map(x => P.get(x.persona_a === id ? x.persona_b : x.persona_a)).filter(Boolean); };
     const tienePadres = p => !!(p && (p.padre_id && P.has(p.padre_id) || p.madre_id && P.has(p.madre_id)));
     const hijosDe = ids => A.personas.filter(h => ids.includes(h.padre_id) || ids.includes(h.madre_id));
     const hechas = new Map();
+    // «Mi rama»: la persona que entró y todos sus antepasados
+    const yoId = YO && YO.persona_id, rama = new Set();
+    for (let cola = yoId ? [yoId] : []; cola.length;) {
+      const id = cola.pop(); if (rama.has(id)) continue; rama.add(id);
+      const x = P.get(id); if (x) [x.padre_id, x.madre_id].filter(Boolean).forEach(y => cola.push(y));
+    }
+    const avatar = new Map(A.personas.map(p => { const f = fotosDe(p)[0]; return [p.id, f ? ruta(f.album, f, true) : '']; }));
     const tarjeta = (p) => {
-      const anios = p.fallecido ? [p.anio_nacimiento, p.anio_fallecimiento ? '† ' + p.anio_fallecimiento : '†'].filter(Boolean).join(' – ') : '';
-      return `<button class="persona ${p.por_confirmar ? 'confirmar' : ''}" data-buscar="${esc(nombreBusqueda(p.nombre))}" title="${p.por_confirmar ? 'Datos por confirmar · ' : ''}Ver sus fotos">${esc(p.nombre)}${anios ? `<small>${esc(anios)}</small>` : ''}</button>`;
+      const anios = aniosDe(p), cls = [p.por_confirmar ? 'confirmar' : '', p.id === yoId ? 'yo' : rama.has(p.id) ? 'rama' : ''].join(' ');
+      return `<button class="persona ${cls}" data-persona-id="${p.id}" title="${p.por_confirmar ? 'Datos por confirmar · ' : ''}Ver su página">${avatar.get(p.id) ? `<img class="avatar" data-p="${esc(avatar.get(p.id))}" alt="">` : ''}<span>${p.id === yoId ? '<span class="tu">Tú</span><br>' : ''}${esc(p.nombre)}${anios ? `<small>${esc(anios)}</small>` : ''}</span></button>`;
     };
     const raizDe = new Map();
     function familia(p, raiz) {
@@ -518,24 +690,72 @@
     });
     const sinUbicar = A.personas.filter(p => ![...hechas.keys()].some(k => k.split('|').includes(p.id)));
     $('#vista').innerHTML = `<h1 class="hero chico">Árbol familiar</h1>
-      <p class="lead">${A.personas.length} personas. Toca un nombre para ver sus fotos. Los recuadros con borde punteado tienen datos por confirmar: si sabes algo, cuéntaselo a la administradora del archivo.</p>
+      <p class="lead">${A.personas.length} personas. Toca un nombre para ver su página, sus fotos y sus recuerdos.
+        ${yoId ? 'Tu rama (tus padres, abuelos y bisabuelos) aparece resaltada.' : 'Para ver tu rama resaltada, ábrete en una foto y pulsa «¿Reconoces a alguien en esta foto?» › «Soy yo».'}
+        Los recuadros con borde punteado tienen datos por confirmar.</p>
       <div class="arbol-caja"><ul class="arbol">${ramas.join('')}</ul>
       ${sinUbicar.length ? `<h3 style="margin-top:40px;font-weight:500">Aún sin ubicar en el árbol</h3><div class="familia">${sinUbicar.map(tarjeta).join('')}</div>` : ''}</div>`;
-    document.querySelectorAll('[data-buscar]').forEach(b => b.onclick = () => { location.hash = '#/buscar?q=' + encodeURIComponent(b.dataset.buscar); });
+    document.querySelectorAll('[data-persona-id]').forEach(b => b.onclick = () => { location.hash = '#/persona/' + b.dataset.personaId; });
+    hidratar($('#vista'));
   }
 
   /* ===== Administrar ===== */
   async function vistaAdmin() {
     if (!YO || !YO.es_admin) { location.hash = '#/'; return; }
     $('#vista').innerHTML = `<h1 class="hero chico">Administrar</h1>
+      <div class="panel"><h2>Aportes por revisar</h2>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.5">Lo que la familia reconoció en las fotos. Las etiquetas ya se ven en las fotos; aquí decides si el parentesco entra al árbol. Elige la persona del árbol que corresponde (o crea una nueva) y pulsa «Añadir al árbol».</p>
+        <div id="adm-aportes">Cargando...</div></div>
       <div class="panel"><h2>Familiares registrados</h2><div id="adm-miembros">Cargando...</div></div>
       <div class="panel"><h2>Árbol familiar</h2><p style="font-size:.85rem;color:var(--muted)">Añade personas, corrige nombres y enlaza padres, madres y parejas. Desmarca «por confirmar» cuando un dato esté verificado.</p><div id="adm-arbol">Cargando...</div></div>
       <div class="panel"><h2>Subir fotos</h2>
         <p style="font-size:.85rem;color:var(--muted);line-height:1.5">Elige la carpeta del archivo en tu computadora (la que tiene <b>albums.json</b> y las carpetas <b>fotos</b> y <b>mini</b>). Solo se suben las fotos nuevas o cambiadas; las que ya están no se repiten.</p>
         <input type="file" id="adm-carpeta" webkitdirectory directory multiple>
         <div class="progreso"><div id="adm-barra"></div></div><p id="adm-subida" style="font-size:.85rem"></p></div>`;
-    pintarMiembros(); pintarArbolAdmin();
+    pintarAportes(); pintarMiembros(); pintarArbolAdmin();
     $('#adm-carpeta').onchange = e => subirCarpeta([...e.target.files]);
+  }
+
+  async function pintarAportes() {
+    const caja = $('#adm-aportes');
+    let A; try { A = await obtenerArbol(true); } catch (e) { caja.textContent = 'No se pudo cargar.'; return; }
+    await cargarEtiquetas();
+    const pend = ETIQUETAS.filter(e => e.arbol === 'pendiente');
+    const recientes = ETIQUETAS.filter(e => e.arbol !== 'pendiente').slice(-20).reverse();
+    const frase = e => e.relacion === 'yo' ? `${e.autor_nombre || 'Un familiar'} dice que <b>es él/ella</b>`
+      : e.relacion === 'otro' ? `${e.autor_nombre || 'Un familiar'} reconoce a` : `${e.autor_nombre || 'Un familiar'} dice que es <b>${esc(RELACION[e.relacion].replace('Mi ', 'su ').toLowerCase())}</b>`;
+    const opciones = e => {
+      const nombre = nombreEtq(e);
+      const sug = A.personas.filter(p => p.id === e.persona_id || mismoNombre(p.nombre, nombre)).map(p => p.id);
+      return `<option value="">➕ Crear persona nueva: ${esc(nombre)}</option>` +
+        [...A.personas].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(p => `<option value="${p.id}" ${p.id === sug[0] ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('');
+    };
+    const fila = (e, conRevision) => {
+      const f = FOTO_POR_CLAVE.get(e.foto);
+      return `<div class="aporte" data-id="${e.id}">${f ? `<a href="#/album/${encodeURIComponent(f.album.id)}"><img data-p="${esc(ruta(f.album, f, true))}" alt=""></a>` : ''}
+        <div class="txt">${frase(e)} <b>${esc(nombreEtq(e))}</b>${e.nota ? `<br><i>«${esc(e.nota)}»</i>` : ''}
+          <br><small style="color:var(--muted)">${f ? esc(f.album.titulo) + ' · foto ' + f.n : esc(e.foto)} · ${new Date(e.creado).toLocaleDateString('es')}${conRevision ? '' : ' · ' + ({ aplicada: 'en el árbol', rechazada: 'solo etiqueta', no_aplica: 'etiqueta' }[e.arbol] || '')}</small>
+          ${conRevision ? `<br><select>${opciones(e)}</select><br>
+            <button class="mini-btn ok" data-aplicar="1">Añadir al árbol</button><button class="mini-btn gris" data-aplicar="0">Dejar solo como etiqueta</button>` : ''}
+          <button class="mini-btn bad" data-borrar>Borrar</button></div></div>`;
+    };
+    caja.innerHTML = (pend.length ? pend.map(e => fila(e, true)).join('') : '<p style="font-size:.85rem">No hay aportes por revisar.</p>') +
+      (recientes.length ? `<h3 style="font-weight:500;margin:24px 0 4px">Últimas etiquetas</h3>${recientes.map(e => fila(e, false)).join('')}` : '');
+    caja.querySelectorAll('.aporte').forEach(div => {
+      div.querySelectorAll('[data-aplicar]').forEach(b => b.onclick = async () => {
+        b.disabled = true;
+        const sel = div.querySelector('select');
+        const { data, error } = await sb.rpc('admin_revisar_etiqueta', { p_id: div.dataset.id, p_persona: sel && sel.value ? sel.value : null, p_aplicar: b.dataset.aplicar === '1' });
+        if (error || !data || !data.ok) alert('No se pudo: ' + ((error && error.message) || (data && data.error)));
+        pintarAportes(); pintarArbolAdmin();
+      });
+      div.querySelector('[data-borrar]').onclick = async () => {
+        if (!confirm('¿Borrar esta etiqueta de la foto?')) return;
+        await sb.rpc('borrar_etiqueta', { p_id: div.dataset.id });
+        pintarAportes();
+      };
+    });
+    hidratar(caja);
   }
 
   async function pintarMiembros() {
@@ -651,10 +871,11 @@
     const q = new URLSearchParams(qs || '');
     const partes = rutaH.split('/').filter(Boolean);
     const sec = partes[0] || 'inicio';
-    document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === (sec === 'album' ? 'inicio' : sec)));
+    document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === (sec === 'album' ? 'inicio' : sec === 'persona' ? 'arbol' : sec)));
     window.scrollTo(0, 0);
     if (sec === 'admin') return vistaAdmin();
     if (sec === 'arbol') return vistaArbol();
+    if (sec === 'persona') return vistaPersona(decodeURIComponent(partes[1] || ''));
     if (!DATA) return sinDatos();
     if (sec === 'album') vistaAlbum(decodeURIComponent(partes[1] || ''));
     else if (sec === 'historias') vistaHistorias();
