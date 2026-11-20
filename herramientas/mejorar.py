@@ -72,6 +72,14 @@ def mejorar(img):
         hsv = cv2.cvtColor(out8, cv2.COLOR_BGR2HSV).astype(np.float32)
         hsv[..., 1] = np.clip(hsv[..., 1] * (1.0 + 0.12 * (1 - f_color * 0.5)), 0, 255)
         out8 = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+    # 5) nitidez suave (máscara de enfoque solo sobre la luminosidad, para no crear halos de color ni realzar el grano)
+    lab = cv2.cvtColor(out8, cv2.COLOR_BGR2LAB)
+    Lf = lab[..., 0].astype(np.float32)
+    sigma = max(1.0, max(out8.shape[:2]) / 1500)
+    detalle = Lf - cv2.GaussianBlur(Lf, (0, 0), sigma)
+    detalle[np.abs(detalle) < 2] = 0                      # no tocar el grano fino
+    lab[..., 0] = np.clip(Lf + 0.45 * detalle, 0, 255).astype(np.uint8)
+    out8 = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
     info = {'dominante': round(dominante, 1), 'contraste': round(contraste, 1), 'bn': blanco_negro, 'variedad': round(variedad, 1),
             'f_color': round(f_color, 2), 'f_contraste': round(f_contraste, 2)}
     return out8, info
