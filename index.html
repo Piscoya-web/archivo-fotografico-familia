@@ -725,12 +725,13 @@
         <p style="font-size:.85rem;color:var(--muted);line-height:1.5">Lo que la familia reconoció en las fotos. Las etiquetas ya se ven en las fotos; aquí decides si el parentesco entra al árbol. Elige la persona del árbol que corresponde (o crea una nueva) y pulsa «Añadir al árbol».</p>
         <div id="adm-aportes">Cargando...</div></div>
       <div class="panel"><h2>Familiares registrados</h2><div id="adm-miembros">Cargando...</div></div>
+      <div class="panel"><h2>Unir personas</h2><p style="font-size:.85rem;color:var(--muted);line-height:1.5">Si la misma persona aparece dos veces en el árbol, elige la ficha que se queda y la repetida. Todo lo de la repetida (etiquetas en fotos, hijos, parejas, padres y su cuenta) pasa a la que se queda, y la repetida se borra.</p><div id="adm-unir">Cargando...</div></div>
       <div class="panel"><h2>Árbol familiar</h2><p style="font-size:.85rem;color:var(--muted)">Añade personas, corrige nombres y enlaza padres, madres y parejas. Desmarca «por confirmar» cuando un dato esté verificado.</p><div id="adm-arbol">Cargando...</div></div>
       <div class="panel"><h2>Subir fotos</h2>
         <p style="font-size:.85rem;color:var(--muted);line-height:1.5">Elige la carpeta del archivo en tu computadora (la que tiene <b>albums.json</b> y las carpetas <b>fotos</b> y <b>mini</b>). Solo se suben las fotos nuevas o cambiadas; las que ya están no se repiten.</p>
         <input type="file" id="adm-carpeta" webkitdirectory directory multiple>
         <div class="progreso"><div id="adm-barra"></div></div><p id="adm-subida" style="font-size:.85rem"></p></div>`;
-    pintarAportes(); pintarMiembros(); pintarArbolAdmin();
+    pintarAportes(); pintarMiembros(); pintarArbolAdmin(); pintarUnir();
     $('#adm-carpeta').onchange = e => subirCarpeta([...e.target.files]);
   }
 
@@ -837,6 +838,51 @@
       const b = f.querySelector('[data-borrar]');
       if (b) b.onclick = async () => { if (!confirm('¿Borrar a ' + f.elements.nombre.value + ' del árbol?')) return; const r = await sb.from('personas').delete().eq('id', f.dataset.id); if (r.error) alert(r.error.message); pintarArbolAdmin(); };
     });
+  }
+
+  async function pintarUnir() {
+    const caja = $('#adm-unir');
+    let A; try { A = await leerArbol(); } catch (e) { caja.textContent = 'No se pudo cargar.'; return; }
+    const P = new Map(A.personas.map(p => [p.id, p]));
+    const etiqueta = p => esc(p.nombre) + (p.anio_nacimiento ? ' (' + p.anio_nacimiento + ')' : '');
+    const lista = [...A.personas].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(p => `<option value="${p.id}">${etiqueta(p)}</option>`).join('');
+    caja.innerHTML = `<div class="form-fila">
+        <select id="unir-queda" style="flex:1 1 220px"><option value="">Se queda: —</option>${lista}</select>
+        <select id="unir-sale" style="flex:1 1 220px"><option value="">Repetida (se borra): —</option>${lista}</select>
+        <button class="mini-btn gris" id="unir-ver" type="button">Ver qué cambia</button></div>
+      <div id="unir-plan" style="font-size:.85rem;line-height:1.6"></div>`;
+    $('#unir-ver').onclick = async () => {
+      const queda = $('#unir-queda').value, sale = $('#unir-sale').value, plan = $('#unir-plan');
+      if (!queda || !sale) { plan.textContent = 'Elige las dos fichas.'; return; }
+      if (queda === sale) { plan.textContent = 'Elige dos fichas distintas.'; return; }
+      plan.textContent = 'Revisando...';
+      const [e, m] = await Promise.all([sb.from('etiquetas').select('id,foto').eq('persona_id', sale), sb.from('miembros').select('nombre,correo').eq('persona_id', sale)]);
+      const etq = e.data || [], miem = m.data || [];
+      const hijos = A.personas.filter(p => p.id !== queda && (p.padre_id === sale || p.madre_id === sale));
+      const parejas = A.parejas.filter(x => x.persona_a === sale || x.persona_b === sale).map(x => x.persona_a === sale ? x.persona_b : x.persona_a).filter(id => id !== queda);
+      const s = P.get(sale), q = P.get(queda);
+      const nom = id => esc((P.get(id) || {}).nombre || '¿?');
+      const items = [
+        etq.length && `${etq.length} etiqueta${etq.length > 1 ? 's' : ''} en fotos`,
+        hijos.length && `es padre/madre de: ${hijos.map(h => esc(h.nombre)).join(', ')}`,
+        parejas.length && `pareja: ${parejas.map(nom).join(', ')}`,
+        (s.padre_id || s.madre_id) && `sus padres: ${[s.padre_id, s.madre_id].filter(Boolean).map(nom).join(' y ')}${q.padre_id || q.madre_id ? ' (solo si faltan en la que se queda)' : ''}`,
+        miem.length && `cuenta de miembro: ${miem.map(x => esc(x.nombre) + ' &lt;' + esc(x.correo) + '&gt;').join(', ')}`
+      ].filter(Boolean);
+      plan.innerHTML = `<p>Pasa de <b>${esc(s.nombre)}</b> a <b>${esc(q.nombre)}</b>:</p>
+        <ul>${items.length ? items.map(i => `<li>${i}</li>`).join('') : '<li>Nada enlazado: solo se borra la ficha repetida.</li>'}</ul>
+        <p>Después se borra <b>${esc(s.nombre)}</b>. No se puede deshacer.</p>
+        <button class="mini-btn bad" id="unir-ok" type="button">Unir y borrar la repetida</button>`;
+      $('#unir-ok').onclick = async () => {
+        if (!confirm(`¿Unir «${s.nombre}» en «${q.nombre}» y borrar «${s.nombre}»?`)) return;
+        $('#unir-ok').disabled = true;
+        const { data, error } = await sb.rpc('admin_unir_personas', { p_conservar: queda, p_borrar: sale });
+        if (error || !data || !data.ok) { alert('No se pudo: ' + ((error && error.message) || (data && data.error))); $('#unir-ok').disabled = false; return; }
+        ARBOL = null;
+        pintarUnir(); pintarArbolAdmin(); pintarAportes();
+        alert(`Listo: «${data.borrada}» quedó unida en «${data.conservada}».`);
+      };
+    };
   }
 
   async function subirCarpeta(files) {
