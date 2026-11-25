@@ -739,6 +739,33 @@
     const caja = $('#adm-aportes');
     let A; try { A = await obtenerArbol(true); } catch (e) { caja.textContent = 'No se pudo cargar.'; return; }
     await cargarEtiquetas();
+    // Lo que ya está en el árbol no se vuelve a ofrecer: se marca como «en el árbol» sin tocar nada.
+    const { data: miembros } = await sb.from('miembros').select('user_id,persona_id');
+    const personaDe = new Map((miembros || []).map(m => [m.user_id, m.persona_id]));
+    const P = new Map(A.personas.map(p => [p.id, p]));
+    const igual = s => norm(s).replace(/\s+/g, ' ').trim();
+    const destinoDe = e => {
+      if (e.persona_id) return e.persona_id;
+      const iguales = A.personas.filter(p => igual(p.nombre) === igual(e.nombre_texto));
+      return iguales.length === 1 ? iguales[0].id : null;
+    };
+    const yaEsta = e => {
+      const d = destinoDe(e), yo = personaDe.get(e.autor);
+      if (!d) return false;
+      if (e.relacion === 'otro') return true;
+      if (!yo) return false;
+      if (e.relacion === 'yo') return yo === d;
+      if (e.relacion === 'padre') return (P.get(yo) || {}).padre_id === d;
+      if (e.relacion === 'madre') return (P.get(yo) || {}).madre_id === d;
+      if (e.relacion === 'hijo') return [(P.get(d) || {}).padre_id, (P.get(d) || {}).madre_id].includes(yo);
+      if (e.relacion === 'pareja') return A.parejas.some(x => (x.persona_a === yo && x.persona_b === d) || (x.persona_b === yo && x.persona_a === d));
+      return false;
+    };
+    const resueltas = ETIQUETAS.filter(e => e.arbol === 'pendiente' && yaEsta(e));
+    if (resueltas.length) {
+      await Promise.all(resueltas.map(e => sb.rpc('admin_marcar_en_arbol', { p_id: e.id, p_persona: destinoDe(e) })));
+      await cargarEtiquetas();
+    }
     const pend = ETIQUETAS.filter(e => e.arbol === 'pendiente');
     const recientes = ETIQUETAS.filter(e => e.arbol !== 'pendiente').slice(-20).reverse();
     const frase = e => e.relacion === 'yo' ? `${e.autor_nombre || 'Un familiar'} dice que <b>es él/ella</b>`
