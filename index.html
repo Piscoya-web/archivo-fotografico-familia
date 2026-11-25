@@ -824,7 +824,7 @@
     });
   }
 
-  async function pintarArbolAdmin() {
+  async function pintarArbolAdmin(guardadoId) {
     let A; try { A = await leerArbol(); } catch (e) { $('#adm-arbol').textContent = 'No se pudo cargar.'; return; }
     A.personas.sort((a, b) => a.nombre.localeCompare(b.nombre));
     const opciones = (sel, sexo) => '<option value="">—</option>' + A.personas.filter(p => !sexo || !p.sexo || p.sexo === sexo).map(p => `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('');
@@ -853,18 +853,34 @@
           madre_id: g('madre_id').value || null, por_confirmar: g('por_confirmar').checked
         };
         if (!datos.nombre) return alert('Falta el nombre.');
+        const boton = f.querySelector('[type=submit]');
+        boton.disabled = true; boton.textContent = 'Guardando...';
         let id = f.dataset.id, r;
         if (id) r = await sb.from('personas').update(datos).eq('id', id);
         else { r = await sb.from('personas').insert(datos).select('id').single(); id = r.data && r.data.id; }
-        if (r.error) return alert('No se pudo guardar: ' + r.error.message);
-        const pareja = g('pareja').value, actuales = parejasDe(id);
-        if (pareja && !actuales.includes(pareja)) await sb.from('parejas').insert({ persona_a: id, persona_b: pareja });
-        if (!pareja && actuales.length) await sb.from('parejas').delete().or(`persona_a.eq.${id},persona_b.eq.${id}`);
-        pintarArbolAdmin();
+        if (r.error) { boton.disabled = false; boton.textContent = id ? 'Guardar' : 'Añadir persona'; return alert('No se pudo guardar: ' + r.error.message); }
+        // pareja: si cambió, se quita la anterior y se pone la nueva
+        const pareja = g('pareja').value, actual = parejasDe(id)[0] || '';
+        if (pareja !== actual) {
+          let rp = await sb.from('parejas').delete().or(`persona_a.eq.${id},persona_b.eq.${id}`);
+          if (!rp.error && pareja) rp = await sb.from('parejas').insert({ persona_a: id, persona_b: pareja });
+          if (rp.error) alert('Se guardó la persona, pero no la pareja: ' + rp.error.message);
+        }
+        ARBOL = null;
+        await pintarArbolAdmin(id);
+        pintarUnir();
       };
       const b = f.querySelector('[data-borrar]');
-      if (b) b.onclick = async () => { if (!confirm('¿Borrar a ' + f.elements.nombre.value + ' del árbol?')) return; const r = await sb.from('personas').delete().eq('id', f.dataset.id); if (r.error) alert(r.error.message); pintarArbolAdmin(); };
+      if (b) b.onclick = async () => { if (!confirm('¿Borrar a ' + f.elements.nombre.value + ' del árbol?')) return; const r = await sb.from('personas').delete().eq('id', f.dataset.id); if (r.error) alert(r.error.message); ARBOL = null; pintarArbolAdmin(); pintarUnir(); };
     });
+    // aviso visible de que se guardó
+    const hecho = guardadoId && document.querySelector(`#adm-arbol form[data-id="${guardadoId}"]`);
+    if (hecho) {
+      const bt = hecho.querySelector('[type=submit]');
+      bt.textContent = '✓ Guardado'; hecho.style.background = 'rgba(46, 125, 50, .08)';
+      hecho.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      setTimeout(() => { bt.textContent = 'Guardar'; hecho.style.background = ''; }, 2500);
+    }
   }
 
   async function pintarUnir() {
